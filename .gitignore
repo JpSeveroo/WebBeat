@@ -31,5 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+<<<<<<< HEAD
+.env
+.env.jp
+=======
 
 .env
+>>>>>>> 3c8f11ea69a24adb8ac6050d523c621909048a65
