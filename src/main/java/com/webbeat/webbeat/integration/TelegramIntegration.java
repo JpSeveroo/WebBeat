@@ -1,8 +1,5 @@
 package com.webbeat.webbeat.integration;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -28,16 +25,15 @@ public class TelegramIntegration {
     }
 
     public Mono<String> enviarMensagem(String mensagem){
-        String mensagemDecodificada = URLEncoder.encode(mensagem, StandardCharsets.UTF_8);
 
-        String path = String.format("/bot%s/enviarMensagem" + botToken);
+        String path = String.format("/bot%s/sendMessage", botToken);
 
         return webClient.get()
             //Aqui eu monto a Url para a requisição (Sim, na tora)
                 .uri(uriBuilder -> uriBuilder
                         .path(path)
                         .queryParam("chat_id", chatID)
-                        .queryParam("text", mensagemDecodificada)
+                        .queryParam("text", mensagem)
                         .build())
             //Enviando a requisição http    
                 .retrieve()
