@@ -1,4 +1,3 @@
-
 package com.webbeat.webbeat.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;

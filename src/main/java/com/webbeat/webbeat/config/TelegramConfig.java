@@ -6,7 +6,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 //Criando um webclient específico para o telegram
 @Configuration
-public class TelegramConfig {
+public class  TelegramConfig {
     @Bean
     public WebClient telegramWebClient(){
         return WebClient.builder()

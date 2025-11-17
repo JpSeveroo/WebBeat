@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Entrar no WebBeat</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+<div class="container">
+    <h1>Acesse sua conta WebBeat</h1>
+
+    <div th:if="${successMessage}" class="alert alert-success">
+        <span th:text="${successMessage}"></span>
+    </div>
+
+    <div th:if="${param.error}" class="alert alert-danger">
+        Email ou senha inválidos. Por favor, tente novamente.
+    </div>
+
+    <form th:action="@{/auth/login}" method="post" class="auth-form">
+        <div class="form-group">
+            <label for="username">Email</label>
+            <input type="email" id="username" name="username" required>
+        </div>
+
+        <div class="form-group">
+            <label for="password">Senha</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Entrar</button>
+    </form>
+
+    <p>
+        Novo usuário? <a th:href="@{/auth/register}">Cadastre-se aqui</a>
+    </p>
+</div>
+</body>
+</html>

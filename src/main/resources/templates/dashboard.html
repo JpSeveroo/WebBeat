@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard | WebBeat</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+<div class="container">
+    <h1 sec:authentication="name">Bem-vindo à sua Dashboard!</h1>
+
+    <p>Esta é uma página protegida. Sucesso na autenticação!</p>
+
+    <form th:action="@{/logout}" method="post">
+        <button type="submit" class="btn btn-danger">Sair (Logout)</button>
+    </form>
+</div>
+</body>
+</html>
