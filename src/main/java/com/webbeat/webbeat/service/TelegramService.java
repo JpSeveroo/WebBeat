@@ -14,9 +14,22 @@ public class TelegramService {
     }
 
     public void envioMensagem(String mensagem) {
-        telegramFunction.enviarMensagem(mensagem)
-                .doOnSuccess(response -> System.out.println("✅ Mensagem enviada com sucesso!"))
-                .subscribe();
+        telegramFunction.enviarMensagem(mensagem);
     }
-    //aqui é só o cara usar TelegramService.envioMensagem("O site parou de funcionar viss"), exemplo.
+
+    public void AlertaNotification(String nomeServico, String url, String erro){
+        String mensagemFormatada = String.format(
+                """
+                🚨 *ALERTA DE FALHA DETECTADA* 🚨
+                
+                📉 *Serviço:* %s
+                🔗 *URL:* %s
+                ❌ *Erro:* %s
+                
+                Verifique imediatamente!
+                """,
+                nomeServico, url, erro);
+
+        telegramFunction.enviarMensagem(mensagemFormatada).subscribe();
+    }
 }
