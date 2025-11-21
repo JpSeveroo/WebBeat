@@ -16,11 +16,11 @@ public class MonitoredService {
         this.monitoredRepository = monitoredRepository;
     }
 
-    public List<Monitored> findByOwnerId(String ownerId) {
-        return monitoredRepository.repoFindByOwnerId(ownerId);
+    public List<Monitored> monFindByOwnerId(String ownerId) {
+        return monitoredRepository.findByOwnerId(ownerId);
     }
 
-    public Monitored findByIdAndOwner(String Id, String ownerId) {
+    public Monitored monFindByIdAndOwner(String Id, String ownerId) {
         return monitoredRepository.findById(Id)
                 .filter(monitored -> monitored.ownerId().equals(ownerId))
                 .orElseThrow(() -> new IllegalStateException("Monitored URL not found or access denied"));
@@ -44,7 +44,7 @@ public class MonitoredService {
 
     public Monitored updateMonitored(String id, String ownerId, MonitoredDTO monitoredDTO) {
 
-        Monitored existing = findByIdAndOwner(id, ownerId);
+        Monitored existing = monFindByIdAndOwner(id, ownerId);
 
         Monitored updated = new Monitored(
                 existing.id(),
@@ -57,7 +57,7 @@ public class MonitoredService {
 
     public void removeMonitored(String id, String ownerId) {
 
-        Monitored existing = findByIdAndOwner(id, ownerId);
+        Monitored existing = monFindByIdAndOwner(id, ownerId);
 
         monitoredRepository.delete(existing);
     }

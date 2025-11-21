@@ -22,7 +22,7 @@ public class MonitoredController {
     @GetMapping
     public String readMonitored(Model model, @AuthenticationPrincipal CustomUserDetails user) {
 
-        var myMonitored = monitoredService.findByOwnerId(user.getId());
+        var myMonitored = monitoredService.monFindByOwnerId(user.getId());
 
         model.addAttribute("monitored", myMonitored);
 
@@ -54,7 +54,7 @@ public class MonitoredController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
 
-        Monitored monitored = monitoredService.findByIdAndOwner(id, user.getId());
+        Monitored monitored = monitoredService.monFindByIdAndOwner(id, user.getId());
 
         MonitoredDTO monitoredDTO = new MonitoredDTO(monitored.name(), monitored.link());
 
