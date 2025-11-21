@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Edit Service</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+
+<div class="container">
+    <h1>Edit Service</h1>
+
+    <div class="card">
+        <form th:action="@{/monitored/update/{id}(id=${id})}" th:object="${monitored}" method="post">
+
+            <label>Service Name</label>
+            <input type="text" th:field="*{name}" required>
+
+            <label>Service URL</label>
+            <input type="url" th:field="*{link}" required>
+
+            <div class="button-group">
+                <button type="submit" class="btn-primary">Save Changes</button>
+                <a th:href="@{/monitored}" class="btn-cancel">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

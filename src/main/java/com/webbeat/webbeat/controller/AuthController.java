@@ -1,7 +1,6 @@
 package com.webbeat.webbeat.controller;
 
-
-import com.webbeat.webbeat.dto.RegisterRequest;
+import com.webbeat.webbeat.dto.UserDTO;
 import com.webbeat.webbeat.service.UserService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -30,13 +29,13 @@ public class AuthController {
     public String registerPage(Model model) {
 
         if (!model.containsAttribute("registerRequest")) {
-            model.addAttribute("registerRequest", new RegisterRequest(null, null));
+            model.addAttribute("registerRequest", new UserDTO(null, null));
         }
         return "register";
     }
 
     @PostMapping("/register")
-    public String registerUser(@ModelAttribute RegisterRequest request,
+    public String registerUser(@ModelAttribute UserDTO request,
                                RedirectAttributes redirectAttributes) {
         try {
 

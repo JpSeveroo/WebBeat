@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>WebBeat - Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+
+<div class="container">
+    <h1>WebBeat Monitor</h1>
+
+    <div class="card">
+        <h3>Monitor New Service</h3>
+        <form th:action="@{/monitored/add}" method="post">
+            <input type="text" name="name" placeholder="Service Name (e.g. Google)" required>
+            <input type="url" name="link" placeholder="URL (e.g. https://google.com)" required>
+            <button type="submit" class="btn-primary">Start Monitoring</button>
+        </form>
+    </div>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>URL</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="item : ${monitored}">
+            <td th:text="${item.name}">Google</td>
+            <td><a th:href="${item.link}" th:text="${item.link}" target="_blank">Link</a></td>
+            <td class="actions">
+                <a th:href="@{/monitored/edit/{id}(id=${item.id})}" class="btn-edit">Edit</a>
+
+                <form th:action="@{/monitored/delete/{id}(id=${item.id})}" method="post" style="display:inline;">
+                    <button type="submit" class="btn-delete" onclick="return confirm('Are you sure?');">Delete</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>
