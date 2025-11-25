@@ -1,6 +1,6 @@
 package com.webbeat.webbeat.dto;
 
-public record RegisterRequest(
+public record UserDTO(
         String email,
         String password
 ) {}

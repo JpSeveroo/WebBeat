@@ -1,39 +1,43 @@
 <!DOCTYPE html>
-<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Entrar no WebBeat</title>
-    <link rel="stylesheet" th:href="@{/css/main.css}">
-</head>
-<body>
-<div class="container">
-    <h1>Acesse sua conta WebBeat</h1>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head-content}"></head>
+<body class="bg-gray-900 text-gray-200 flex items-center justify-center min-h-screen">
 
-    <div th:if="${successMessage}" class="alert alert-success">
+<div class="bg-gray-800/50 p-8 rounded-xl shadow-lg border border-gray-700/50 w-full max-w-md">
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-white mb-2">Welcome Back</h1>
+        <p class="text-gray-400">Sign in to access your dashboard</p>
+    </div>
+
+    <div th:if="${successMessage}" class="mb-4 p-3 bg-green-900/50 border border-green-800 text-green-300 rounded-lg text-sm">
         <span th:text="${successMessage}"></span>
     </div>
-
-    <div th:if="${param.error}" class="alert alert-danger">
-        Email ou senha inválidos. Por favor, tente novamente.
+    <div th:if="${param.error}" class="mb-4 p-3 bg-red-900/50 border border-red-800 text-red-300 rounded-lg text-sm">
+        Invalid email or password.
     </div>
 
-    <form th:action="@{/auth/login}" method="post" class="auth-form">
-        <div class="form-group">
-            <label for="username">Email</label>
-            <input type="email" id="username" name="username" required>
+    <form th:action="@{/auth/login}" method="post" class="space-y-6">
+        <div>
+            <label for="username" class="block mb-2 text-sm font-medium text-gray-300">Email</label>
+            <input type="email" id="username" name="username" required
+                   class="bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5">
         </div>
 
-        <div class="form-group">
-            <label for="password">Senha</label>
-            <input type="password" id="password" name="password" required>
+        <div>
+            <label for="password" class="block mb-2 text-sm font-medium text-gray-300">Password</label>
+            <input type="password" id="password" name="password" required
+                   class="bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5">
         </div>
 
-        <button type="submit" class="btn btn-primary">Entrar</button>
+        <button type="submit" class="w-full text-white bg-purple-600 hover:bg-purple-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors">
+            Sign In
+        </button>
     </form>
 
-    <p>
-        Novo usuário? <a th:href="@{/auth/register}">Cadastre-se aqui</a>
+    <p class="mt-6 text-sm text-center text-gray-400">
+        New here? <a th:href="@{/auth/register}" class="text-purple-400 hover:underline">Create an account</a>
     </p>
 </div>
+
 </body>
 </html>

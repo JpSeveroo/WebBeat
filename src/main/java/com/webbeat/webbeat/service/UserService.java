@@ -1,6 +1,6 @@
 package com.webbeat.webbeat.service;
 
-import com.webbeat.webbeat.dto.RegisterRequest;
+import com.webbeat.webbeat.dto.UserDTO;
 import com.webbeat.webbeat.model.User;
 import com.webbeat.webbeat.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,7 +17,7 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public User registerNewUser(RegisterRequest request) {
+    public User registerNewUser(UserDTO request) {
 
         userRepository.findByEmail(request.email()).ifPresent(user -> {
             throw new IllegalStateException("Email already in use");
