@@ -1,45 +1,75 @@
 package com.webbeat.webbeat.integration;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
-
 import reactor.core.publisher.Mono;
 
 @Component
 public class TelegramIntegration {
-    
+
     @Value("${TELEGRAM_BOT_TOKEN}")
     private String botToken;
 
     @Value("${TELEGRAM_CHAT}")
-    private String chatID;
+    private String chatPadrao;
 
     private final WebClient webClient;
-
-    /*Injeção de dependência. To injetando um construtor pra facilitar a organização
-    do webClient que faz requisição http pra api do telegram*/
 
     public TelegramIntegration(WebClient telegramWebClient) {
         this.webClient = telegramWebClient;
     }
 
-    public Mono<String> enviarMensagem(String mensagem){
 
+    public Mono<String> enviarMensagem(String chatId, Integer threadId, String mensagem){
         String path = String.format("/bot%s/sendMessage", botToken);
+        String destino = (chatId != null) ? chatId : chatPadrao;
 
         return webClient.get()
-            //Aqui eu monto a Url para a requisição (Sim, na tora)
-                .uri(uriBuilder -> uriBuilder
-                        .path(path)
-                        .queryParam("chat_id", chatID)
-                        .queryParam("text", mensagem)
-                        .build())
-            //Enviando a requisição http    
+                .uri(uriBuilder -> {
+                    var builder = uriBuilder
+                            .path(path)
+                            .queryParam("chat_id", destino)
+                            .queryParam("text", mensagem);
+                    if (threadId != null) builder.queryParam("message_thread_id", threadId);
+                    return builder.build();
+                })
                 .retrieve()
                 .bodyToMono(String.class)
-            //Se der merda retorna um erro no console
-                .doOnError(e -> System.err.println("❌ Erro ao enviar mensagem para o Telegram: " + e.getMessage()));
+                .doOnError(e -> System.err.println("❌ Erro Telegram: " + e.getMessage()));
     }
 
+    // --- NOVOS MÉTODOS (ADICIONE DAQUI PARA BAIXO) ---
+
+    // 1. CRIAÇÃO DE TÓPICO (Para quando o usuário cria o monitoramento)
+    public Mono<Integer> criarTopico(String chatId, String nomeServico) {
+        String path = String.format("/bot%s/createForumTopic", botToken);
+
+        return webClient.post()
+                .uri(uriBuilder -> uriBuilder
+                        .path(path)
+                        .queryParam("chat_id", chatId)
+                        .queryParam("name", "📊 " + nomeServico) // Ex: 📊 API Pagamento
+                        .build())
+                .retrieve()
+                .bodyToMono(JsonNode.class) // Recebe JSON para pegar o ID gerado
+                .map(json -> json.get("result").get("message_thread_id").asInt())
+                .doOnError(e -> System.err.println("❌ Erro ao criar tópico: " + e.getMessage()));
+    }
+
+    // 2. EXCLUSÃO DE TÓPICO (Para quando o usuário apaga o monitoramento)
+    public Mono<Void> deletarTopico(String chatId, Integer threadId) {
+        String path = String.format("/bot%s/deleteForumTopic", botToken);
+
+        return webClient.post()
+                .uri(uriBuilder -> uriBuilder
+                        .path(path)
+                        .queryParam("chat_id", chatId)
+                        .queryParam("message_thread_id", threadId)
+                        .build())
+                .retrieve()
+                .bodyToMono(Void.class)
+                .doOnError(e -> System.err.println("❌ Erro ao deletar tópico: " + e.getMessage()));
+    }
 }
