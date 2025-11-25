@@ -1,10 +1,10 @@
 package com.webbeat.webbeat.integration;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import com.fasterxml.jackson.databind.JsonNode;
 
 @Component
 public class TelegramIntegration {
@@ -21,55 +21,46 @@ public class TelegramIntegration {
         this.webClient = telegramWebClient;
     }
 
-
-    public Mono<String> enviarMensagem(String chatId, Integer threadId, String mensagem){
+    public void enviarMensagem(String mensagem) {
         String path = String.format("/bot%s/sendMessage", botToken);
-        String destino = (chatId != null) ? chatId : chatPadrao;
 
-        return webClient.get()
-                .uri(uriBuilder -> {
-                    var builder = uriBuilder
-                            .path(path)
-                            .queryParam("chat_id", destino)
-                            .queryParam("text", mensagem);
-                    if (threadId != null) builder.queryParam("message_thread_id", threadId);
-                    return builder.build();
-                })
+        webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path(path)
+                        .queryParam("chat_id", chatPadrao)
+                        .queryParam("text", mensagem)
+                        .build())
                 .retrieve()
                 .bodyToMono(String.class)
-                .doOnError(e -> System.err.println("❌ Erro Telegram: " + e.getMessage()));
+                .doOnError(e -> System.err.println("❌ Erro Telegram: " + e.getMessage()))
+                .subscribe();
     }
 
-    // --- NOVOS MÉTODOS (ADICIONE DAQUI PARA BAIXO) ---
+    public void enviarMensagemDireta(String chatId, String mensagem) {
+        String path = String.format("/bot%s/sendMessage", botToken);
 
-    // 1. CRIAÇÃO DE TÓPICO (Para quando o usuário cria o monitoramento)
-    public Mono<Integer> criarTopico(String chatId, String nomeServico) {
-        String path = String.format("/bot%s/createForumTopic", botToken);
-
-        return webClient.post()
+        webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path(path)
-                        .queryParam("chat_id", chatId)
-                        .queryParam("name", "📊 " + nomeServico) // Ex: 📊 API Pagamento
+                        .queryParam("chat_id", chatId) // Usa o ID de quem chamou
+                        .queryParam("text", mensagem)
                         .build())
                 .retrieve()
-                .bodyToMono(JsonNode.class) // Recebe JSON para pegar o ID gerado
-                .map(json -> json.get("result").get("message_thread_id").asInt())
-                .doOnError(e -> System.err.println("❌ Erro ao criar tópico: " + e.getMessage()));
+                .bodyToMono(String.class)
+                .subscribe();
     }
 
-    // 2. EXCLUSÃO DE TÓPICO (Para quando o usuário apaga o monitoramento)
-    public Mono<Void> deletarTopico(String chatId, Integer threadId) {
-        String path = String.format("/bot%s/deleteForumTopic", botToken);
+    public Mono<JsonNode> getUpdates(long offset) {
+        String path = String.format("/bot%s/getUpdates", botToken);
 
-        return webClient.post()
+        return webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path(path)
-                        .queryParam("chat_id", chatId)
-                        .queryParam("message_thread_id", threadId)
+                        .queryParam("offset", offset) // Pega só mensagens novas
+                        .queryParam("timeout", 10)    // Espera 10s se estiver vazio
                         .build())
                 .retrieve()
-                .bodyToMono(Void.class)
-                .doOnError(e -> System.err.println("❌ Erro ao deletar tópico: " + e.getMessage()));
+                .bodyToMono(JsonNode.class)
+                .doOnError(e -> System.err.println("❌ Erro ao buscar updates: " + e.getMessage()));
     }
 }
