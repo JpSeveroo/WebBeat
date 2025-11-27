@@ -15,13 +15,6 @@ public class DashController {
         return "dashboard";
     }
 
-    @GetMapping("/settings")
-    public String settingsPage(Model model) {
-        model.addAttribute("activePage", "settings");
-
-        return "settings";
-    }
-
     @GetMapping("/logout-success")
     public String logoutPage() {
         return "redirect:/auth/logout";
