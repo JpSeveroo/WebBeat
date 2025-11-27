@@ -10,5 +10,6 @@ public record Monitored(
         String id,
         String ownerId,
         String name,
-        String link
+        String link,
+        boolean beingMonitored
 ) {}
