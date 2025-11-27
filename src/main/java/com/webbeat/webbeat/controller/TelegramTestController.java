@@ -19,7 +19,7 @@ public class TelegramTestController {
     //Criando um pathzinho pra o teste
     @GetMapping("/test-telegram")
     public String testTelegram() {
-        telegramService.envioMensagem("🚨 Alerta de teste: integração 2.0 funcionando!");
+        //telegramService.notificarFalha("🚨 Alerta de teste: integração 2.0 funcionando!");
         return "Mensagem enviada! Verifique seu Telegram.";
     }
     
