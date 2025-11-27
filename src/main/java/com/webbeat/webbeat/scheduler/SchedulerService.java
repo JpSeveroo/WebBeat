@@ -1,4 +1,4 @@
-package com.webbeat.webbeat.service;
+package com.webbeat.webbeat.scheduler;
 
 import com.webbeat.webbeat.model.Monitored;
 import com.webbeat.webbeat.repository.MonitoredRepository;
