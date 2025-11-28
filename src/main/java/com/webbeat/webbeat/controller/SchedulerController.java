@@ -1,11 +1,10 @@
 package com.webbeat.webbeat.controller;
 
+import com.webbeat.webbeat.security.CustomUserDetails;
 import com.webbeat.webbeat.service.SchedulerService;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/task")
@@ -17,8 +16,14 @@ public class SchedulerController {
         this.schedulerService = schedulerService;
     }
 
-    @PostMapping("/start/{id}")
-    public String startMonitoring(@PathVariable String id) {
-        return schedulerService.startScheduler(id, 30);
+    @PostMapping("/start")
+    public String startMonitoring(@AuthenticationPrincipal CustomUserDetails user) {
+        return schedulerService.startScheduler(user.getId(), 1);
     }
+
+    @GetMapping("/status")
+    public String getStatus(@PathVariable String taskID) {
+        return schedulerService.getStatus(taskID);
+    }
+
 }

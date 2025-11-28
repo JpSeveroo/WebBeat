@@ -7,8 +7,15 @@
 <div th:replace="~{fragments/sidebar :: sidebar('monitored')}"></div>
 
 <main class="flex-1 p-8 overflow-y-auto">
+
     <div class="flex justify-between items-center mb-8">
         <h2 class="text-3xl font-bold text-white">All Monitored URLs</h2>
+
+        <!-- BOTÃO ALTERADO PARA USAR FETCH SEM RECARREGAR A PÁGINA -->
+        <button id="startButton"
+                class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors">
+            Start Monitoring
+        </button>
     </div>
 
     <div class="bg-gray-800/50 rounded-xl p-6 mb-8 border border-gray-700/50 shadow-lg">
@@ -16,11 +23,10 @@
         <form th:action="@{/monitored/add}" method="post" class="flex flex-col md:flex-row gap-4">
             <input type="text" name="name" placeholder="Service Name (e.g. Google)" required
                    class="flex-1 bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5">
-
             <input type="url" name="link" placeholder="URL (e.g. https://google.com)" required
                    class="flex-1 bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5">
-
-            <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+            <button type="submit"
+                    class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
                 Monitor
             </button>
         </form>
@@ -30,25 +36,32 @@
         <table class="min-w-full divide-y divide-gray-700/50">
             <thead class="bg-gray-800/60">
             <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Service Name</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">URL</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+                <th scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+                <th scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Service Name</th>
+                <th scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">URL</th>
+                <th scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
             </tr>
             </thead>
+
             <tbody class="divide-y divide-gray-700/50">
             <tr th:each="item : ${monitored}" class="hover:bg-gray-700/30 transition-colors duration-150">
-
                 <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-gray-700 text-gray-300">
-                                <span class="w-2 h-2 mr-1.5 bg-gray-400 rounded-full"></span> Pending
-                            </span>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-gray-700 text-gray-300">
+                        <span class="w-2 h-2 mr-1.5 bg-gray-400 rounded-full"></span>
+                        Pending
+                    </span>
                 </td>
 
-                <td class="px-6 py-4 whitespace-nowrap text-white font-medium" th:text="${item.name}">Name</td>
+                <td class="px-6 py-4 whitespace-nowrap text-white font-medium"
+                    th:text="${item.name}">Name</td>
 
                 <td class="px-6 py-4 whitespace-nowrap text-gray-400">
-                    <a th:href="${item.link}" th:text="${item.link}" target="_blank" class="hover:text-purple-400 hover:underline">Link</a>
+                    <a th:href="${item.link}" th:text="${item.link}" target="_blank"
+                       class="hover:text-purple-400 hover:underline">Link</a>
                 </td>
 
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
@@ -57,7 +70,8 @@
                         Edit
                     </a>
 
-                    <form th:action="@{/monitored/delete/{id}(id=${item.id})}" method="post" style="display:inline;">
+                    <form th:action="@{/monitored/delete/{id}(id=${item.id})}" method="post"
+                          style="display:inline;">
                         <button type="submit" onclick="return confirm('Are you sure?')"
                                 class="px-3 py-1 text-xs font-semibold text-white bg-red-600/80 hover:bg-red-500 rounded-md shadow-sm transition-colors">
                             Delete
@@ -65,6 +79,7 @@
                     </form>
                 </td>
             </tr>
+
             <tr th:if="${#lists.isEmpty(monitoredList)}">
                 <td colspan="4" class="px-6 py-8 text-center text-gray-400">
                     No services monitored yet. Add one above!
@@ -73,6 +88,46 @@
             </tbody>
         </table>
     </div>
+
 </main>
+
+<!-- EXPÕE O CSRF PARA O JAVASCRIPT (Thymeleaf inline) -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    var csrfHeaderName = /*[[${_csrf.headerName}]]*/ 'X-CSRF-TOKEN';
+    var csrfToken = /*[[${_csrf.token}]]*/ '';
+    /*]]>*/
+</script>
+
+<!-- SCRIPT PARA CHAMAR /task/start VIA FETCH (COM CSRF E CREDENTIALS) -->
+<script>
+    document.getElementById("startButton").addEventListener("click", function () {
+
+        fetch("/task/start", {
+            method: "POST",
+            headers: {
+                [csrfHeaderName]: csrfToken,
+                'Accept': 'text/plain'
+            },
+            credentials: 'same-origin' // envia cookie de sessão
+        })
+            .then(response => {
+                if (!response.ok) {
+                    // se quiser debugar, verifique response.status no console
+                    throw new Error("Erro ao iniciar monitoramento (status " + response.status + ")");
+                }
+                return response.text();
+            })
+            .then(msg => {
+                alert("Monitoramento iniciado!\n\n" + msg);
+            })
+            .catch(err => {
+                alert("Erro: " + err.message);
+                console.error(err);
+            });
+
+    });
+</script>
+
 </body>
 </html>
