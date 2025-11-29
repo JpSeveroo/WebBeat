@@ -1,6 +1,6 @@
 package com.webbeat.webbeat.tasks;
 
-import com.webbeat.webbeat.service.SchedulerService;
+import com.webbeat.webbeat.scheduler.SchedulerService;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -40,7 +40,7 @@ public class RequestTasks implements Runnable {
                 .exchangeToMono(response -> Mono.just(response.statusCode().value()))
                 .block();
 
-        schedulerService.api_status.replace()
+        //schedulerService.api_status.replace();
 
         if (this.statusCode != 200) {
             LOG.warn("status code not 200");
