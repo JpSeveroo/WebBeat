@@ -19,8 +19,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 
-//6928c90fef163892b02ae0f1
-
 @Service
 public class SchedulerService {
     private final ThreadPoolTaskScheduler scheduler;
@@ -59,11 +57,14 @@ public class SchedulerService {
 
         RequestTasks task = tasksFactory.getObject();
         task.setUrl(monitored.link());
+        task.setPort(monitored.port());
+        task.setType(monitored.type());
 
         api_status.put(taskID, "");
 
         if (tasks.containsKey(taskID) && !tasks.get(taskID).isCancelled()) {
             System.out.println("Task " + taskID + " is already running");
+            return "already_running";
         }
 
         ScheduledFuture<?> future = scheduler.scheduleWithFixedDelay(task, Duration.ofSeconds(delay));
