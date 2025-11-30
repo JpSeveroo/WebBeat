@@ -17,7 +17,9 @@ class WebbeatApplicationTests {
 
 	@Test
 	void contextLoads() throws InterruptedException {
-
+        schedulerService.startScheduler("6928c90fef163892b02ae0f1", 1);
+        Thread.sleep(3000);
+        schedulerService.stopMonitoring("6928c90fef163892b02ae0f1");
 	}
 
 }

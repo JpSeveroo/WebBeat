@@ -23,7 +23,7 @@ public class SchedulerController {
     }
 
     @GetMapping("/status")
-    public String getStatus(@PathVariable String taskID) {
+    public Integer getStatus(@PathVariable String taskID) {
         return schedulerService.getStatus(taskID);
     }
 
