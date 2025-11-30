@@ -1,4 +1,4 @@
-package com.webbeat.webbeat.service;
+package com.webbeat.webbeat.scheduler;
 
 import com.webbeat.webbeat.model.Monitored;
 import com.webbeat.webbeat.repository.MonitoredRepository;
@@ -80,7 +80,7 @@ public class SchedulerService {
     public void stopMonitoring(String taskID) {
         ScheduledFuture<?> future = tasks.get(taskID);
         if (future != null || future.isCancelled()) {
-            System.out.println("Task not runnig");
+            System.out.println("Task not running");
         }
 
         future.cancel(true);

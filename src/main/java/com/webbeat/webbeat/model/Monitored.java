@@ -3,6 +3,8 @@ package com.webbeat.webbeat.model;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.Instant;
+
 // É a URL
 @Document(collection = "URLs")
 public record Monitored(
@@ -10,7 +12,7 @@ public record Monitored(
         String id,
         String ownerId,
         String name,
-        String link, //Tá funcionando como se fosse endereço (address) e não somente como um um link comum viss
-        Integer port,
-        String type
+        String link,
+        boolean beingMonitored,
+        Instant monitoringStartTime
 ) {}

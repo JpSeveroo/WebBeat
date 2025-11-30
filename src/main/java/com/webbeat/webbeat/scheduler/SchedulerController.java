@@ -1,7 +1,7 @@
-package com.webbeat.webbeat.controller;
+package com.webbeat.webbeat.scheduler;
 
 import com.webbeat.webbeat.security.CustomUserDetails;
-import com.webbeat.webbeat.service.SchedulerService;
+import com.webbeat.webbeat.scheduler.SchedulerService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
