@@ -1,6 +1,6 @@
 package com.webbeat.webbeat.tasks;
 
-import com.webbeat.webbeat.service.SchedulerService;
+import com.webbeat.webbeat.scheduler.SchedulerService;
 
 import com.webbeat.webbeat.model.LogEntry;
 import com.webbeat.webbeat.repository.LogRepository;
