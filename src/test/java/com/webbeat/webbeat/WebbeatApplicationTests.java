@@ -21,11 +21,6 @@ class WebbeatApplicationTests {
 	@Test
 	void contextLoads() throws InterruptedException {
 
-        Monitored api = new Monitored("teste1", "deco", "teste_api","https://www.google.com/?hl=pt_BR&zx=1764214464417&no_sw_cr=1");
-        monitoredRepository.save(api);
-
-        System.out.println(schedulerService.startScheduler(api.id(), 1));
-        Thread.sleep(3000);
 	}
 
 }

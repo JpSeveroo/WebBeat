@@ -13,6 +13,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 @Component
 @Scope("prototype")
@@ -20,7 +21,6 @@ public class RequestTasks implements Runnable {
 
     private static final Logger LOG = LoggerFactory.getLogger(RequestTasks.class);
     private final WebClient webClient;
-    private final SchedulerService schedulerService;
 
     @Setter
     private String url;
@@ -30,21 +30,24 @@ public class RequestTasks implements Runnable {
 
     public RequestTasks(WebClient webClient, SchedulerService schedulerService) {
         this.webClient = webClient;
-        this.schedulerService = schedulerService;
     }
 
     @Override
     public void run() {
-        this.statusCode = webClient.get()
+        var request = webClient.get()
                 .uri(this.url)
                 .exchangeToMono(response -> Mono.just(response.statusCode().value()))
                 .block();
 
-        if (this.statusCode != 200) {
-            LOG.warn("status code not 200");
+
+        if (request != 200) {
+            LOG.warn(String.format("Request for %s returned status code %d", url, request));
         }
 
-        assert this.statusCode != null;
+        if (!Objects.equals(this.statusCode, request)) {
+            this.statusCode = request;
+        }
+
         LOG.info(this.statusCode.toString());
     }
 }

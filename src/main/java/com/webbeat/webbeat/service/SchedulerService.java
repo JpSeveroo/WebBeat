@@ -24,14 +24,18 @@ import java.util.concurrent.ScheduledFuture;
 @Service
 public class SchedulerService {
     private final ThreadPoolTaskScheduler scheduler;
+
     private final MonitoredRepository monitoredRepository;
+
     private Map<String, ScheduledFuture<?>> tasks = new ConcurrentHashMap<>();
-    public Map<String, String> api_status = new ConcurrentHashMap<>();
+
+    public Map<String, Monitored> apis = new ConcurrentHashMap<>();
+
     @Autowired
     private ObjectFactory<RequestTasks> tasksFactory;
-    private List<Monitored> apis;
 
     private static final Logger LOG = LoggerFactory.getLogger(SchedulerService.class);
+
     @Autowired
     private ReactorResourceFactory reactorResourceFactory;
 
@@ -40,40 +44,30 @@ public class SchedulerService {
         this.monitoredRepository = monitoredRepository;
     }
 
-    public List<String> allApis(String userId) {
-        List<String> apis_id = new ArrayList<>();
-        List<Monitored> apis = monitoredRepository.findByOwnerId(userId);
-        for (Monitored monitored : apis) {
-            apis_id.add(monitored.id());
+    public void allApis(String userId) {
+        List<Monitored> allApis = monitoredRepository.findByOwnerId(userId);
+        for (Monitored monitored : allApis) {
+            apis.put(monitored.id(), monitored);
         }
-        return apis_id;
     }
 
-    public String startScheduler(String ownerID, int delay) {
-        String taskID = allApis(ownerID).get(0);
-
+    public void startScheduler(String taskID, int delay) {
         LOG.info(taskID);
 
-        Optional<Monitored> url = monitoredRepository.findById(taskID);
-        Monitored monitored = url.orElseThrow(() -> new RuntimeException("URL not found"));
+        var beingMonitored = true;
+
+        Monitored monitored = apis.get(taskID);
 
         RequestTasks task = tasksFactory.getObject();
         task.setUrl(monitored.link());
 
-        api_status.put(taskID, "");
-
         if (tasks.containsKey(taskID) && !tasks.get(taskID).isCancelled()) {
             System.out.println("Task " + taskID + " is already running");
+        } else if (beingMonitored) {
+            ScheduledFuture<?> future = scheduler.scheduleWithFixedDelay(task, Duration.ofSeconds(delay));
+            tasks.put(taskID, future);
+            LOG.info("task running");
         }
-
-        ScheduledFuture<?> future = scheduler.scheduleWithFixedDelay(task, Duration.ofSeconds(delay));
-        tasks.put(taskID, future);
-        LOG.info("task running");
-        return "ok";
-    }
-
-    public String getStatus(String taskID) {
-        return api_status.get(taskID);
     }
 
     public void stopMonitoring(String taskID) {
