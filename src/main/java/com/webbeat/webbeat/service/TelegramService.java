@@ -15,7 +15,6 @@ public class TelegramService {
     public void notificarFalha(String nomeServico, String link, String erro) {
         String texto = String.format("""
                 🚨 *ALERTA DE FALHA* 🚨
-                
                 🔴 *Serviço:* %s
                 🔗 *URL:* %s
                 ⚠️ *Erro:* %s

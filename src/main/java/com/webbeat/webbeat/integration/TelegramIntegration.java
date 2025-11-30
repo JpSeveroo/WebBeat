@@ -58,7 +58,7 @@ public class TelegramIntegration {
                         .path(path)
                         .queryParam("offset", offset) // Pega só mensagens novas
                         .queryParam("timeout", 10)    // Espera 10s se estiver vazio
-                        .build())
+                          .build())
                 .retrieve()
                 .bodyToMono(JsonNode.class)
                 .doOnError(e -> System.err.println("❌ Erro ao buscar updates: " + e.getMessage()));
