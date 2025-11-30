@@ -13,18 +13,80 @@
 
     <div class="bg-gray-800/50 rounded-xl p-6 mb-8 border border-gray-700/50 shadow-lg">
         <h4 class="text-lg font-bold text-white mb-4">Add New Service</h4>
-        <form th:action="@{/monitored/add}" method="post" class="flex flex-col md:flex-row gap-4">
-            <input type="text" name="name" placeholder="Service Name (e.g. Google)" required
-                   class="flex-1 bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5">
 
-            <input type="url" name="link" placeholder="URL (e.g. https://google.com)" required
-                   class="flex-1 bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5">
+        <form th:action="@{/monitored/add}" method="post" class="space-y-4">
 
-            <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
-                Monitor
-            </button>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="md:col-span-3">
+                    <input type="text" name="name" placeholder="Service Name (e.g. Google ou Meu Banco)" required
+                           class="w-full bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5">
+                </div>
+
+                <div>
+                    <select name="type" id="serviceType" onchange="toggleFormFields()"
+                            class="w-full bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5">
+                        <option value="HTTP">HTTP / Website</option>
+                        <option value="TCP">TCP / Port</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+
+                <div class="md:col-span-3">
+                    <input type="url" name="link" id="addressInput" placeholder="URL (e.g. https://google.com)" required
+                           class="w-full bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5">
+                </div>
+
+                <div id="portField" class="hidden">
+                    <input type="number" name="port" placeholder="Port (e.g. 27017)"
+                           class="w-full bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5">
+                </div>
+
+                <div id="submitContainer" class="md:col-span-1">
+                    <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-6 rounded-lg transition-colors">
+                        Monitor
+                    </button>
+                </div>
+            </div>
         </form>
     </div>
+
+    <script>
+        function toggleFormFields() {
+            // Pega os elementos da tela pelo ID
+            const type = document.getElementById('serviceType').value;
+            const portField = document.getElementById('portField');
+            const addressInput = document.getElementById('addressInput');
+            const submitContainer = document.getElementById('submitContainer');
+
+            if (type === 'TCP') {
+                // SE FOR TCP:
+                // 1. Mostra o campo de porta (tira o 'hidden')
+                portField.classList.remove('hidden');
+
+                // 2. Muda o texto de ajuda e o tipo do input para aceitar IPs sem 'http://'
+                addressInput.placeholder = "Address / IP (e.g. localhost)";
+                addressInput.type = "text";
+
+                // 3. Ajusta o tamanho do botão para caber na linha
+                submitContainer.classList.remove('md:col-span-1');
+                submitContainer.classList.add('md:col-span-4');
+            } else {
+                // SE FOR HTTP:
+                // 1. Esconde a porta de novo
+                portField.classList.add('hidden');
+
+                // 2. Volta para modo URL (obriga o http://)
+                addressInput.placeholder = "URL (e.g. https://google.com)";
+                addressInput.type = "url";
+
+                // 3. Botão volta ao tamanho normal
+                submitContainer.classList.remove('md:col-span-4');
+                submitContainer.classList.add('md:col-span-1');
+            }
+        }
+    </script>
 
     <div class="bg-gray-800/50 rounded-xl shadow-lg overflow-hidden border border-gray-700/50">
         <table class="min-w-full divide-y divide-gray-700/50">

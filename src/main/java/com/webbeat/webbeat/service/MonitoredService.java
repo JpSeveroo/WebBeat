@@ -36,7 +36,9 @@ public class MonitoredService {
                 null,
                 ownerId,
                 monitoredDTO.name(),
-                monitoredDTO.link()
+                monitoredDTO.link(),
+                monitoredDTO.port(),
+                monitoredDTO.type()
         );
 
         return monitoredRepository.save(newMonitored);
@@ -50,7 +52,9 @@ public class MonitoredService {
                 existing.id(),
                 ownerId,
                 monitoredDTO.name(),
-                monitoredDTO.link()
+                monitoredDTO.link(),
+                monitoredDTO.port(),
+                monitoredDTO.type()
         );
         return monitoredRepository.save(updated);
     }

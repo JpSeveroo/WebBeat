@@ -2,5 +2,7 @@ package com.webbeat.webbeat.dto;
 
 public record MonitoredDTO(
         String name,
-        String link
+        String link,
+        Integer port,
+        String type
 ){}

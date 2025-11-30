@@ -10,5 +10,7 @@ public record Monitored(
         String id,
         String ownerId,
         String name,
-        String link
+        String link, //Tá funcionando como se fosse endereço (address) e não somente como um um link comum viss
+        Integer port,
+        String type
 ) {}

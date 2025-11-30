@@ -48,7 +48,7 @@ public class MonitoringService {
                 })
                 .doOnError(erro -> {
                     System.err.println("❌ FALHA EM: " + servico.name());
-                    telegramService.AlertaNotification(servico.name(), servico.link(), erro.getMessage());
+                    telegramService.notificarFalha(servico.name(), servico.link(), erro.getMessage());
                 })
                 .subscribe();
         //Logica porca pra ajeitar depois
