@@ -38,6 +38,8 @@ public class MonitoredService {
                 ownerId,
                 monitoredDTO.name(),
                 monitoredDTO.link(),
+                monitoredDTO.port(),
+                monitoredDTO.type(),
                 false,
                 null
         );
@@ -54,6 +56,8 @@ public class MonitoredService {
                 ownerId,
                 monitoredDTO.name(),
                 monitoredDTO.link(),
+                monitoredDTO.port(),
+                monitoredDTO.type(),
                 existing.beingMonitored(),
                 existing.monitoringStartTime()
         );
@@ -61,9 +65,7 @@ public class MonitoredService {
     }
 
     public void removeMonitored(String id, String ownerId) {
-
         Monitored existing = monFindByIdAndOwner(id, ownerId);
-
         monitoredRepository.delete(existing);
     }
 
@@ -81,6 +83,8 @@ public class MonitoredService {
                 ownerId,
                 existing.name(),
                 existing.link(),
+                existing.port(),
+                existing.type(),
                 state,
                 counter
         );
