@@ -11,7 +11,6 @@
     <div class="flex justify-between items-center mb-8">
         <h2 class="text-3xl font-bold text-white">All Monitored URLs</h2>
 
-        <!-- BOTÃO ALTERADO PARA USAR FETCH SEM RECARREGAR A PÁGINA -->
         <button id="startButton"
                 class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors">
             Start Monitoring
@@ -20,15 +19,42 @@
 
     <div class="bg-gray-800/50 rounded-xl p-6 mb-8 border border-gray-700/50 shadow-lg">
         <h4 class="text-lg font-bold text-white mb-4">Add New Service</h4>
-        <form th:action="@{/monitored/add}" method="post" class="flex flex-col md:flex-row gap-4">
-            <input type="text" name="name" placeholder="Service Name (e.g. Google)" required
-                   class="flex-1 bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5">
-            <input type="url" name="link" placeholder="URL (e.g. https://google.com)" required
-                   class="flex-1 bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5">
-            <button type="submit"
-                    class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
-                Monitor
-            </button>
+
+        <form th:action="@{/monitored/add}" method="post" class="space-y-4">
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="md:col-span-3">
+                    <input type="text" name="name" placeholder="Service Name (e.g. Google ou Banco)" required
+                           class="w-full bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5">
+                </div>
+
+                <div>
+                    <select name="type" id="serviceType" onchange="toggleFormFields()"
+                            class="w-full bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5">
+                        <option value="HTTP">HTTP / Website</option>
+                        <option value="TCP">TCP / Port</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+
+                <div class="md:col-span-3">
+                    <input type="url" name="link" id="addressInput" placeholder="URL (e.g. https://google.com)" required
+                           class="w-full bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5">
+                </div>
+
+                <div id="portField" class="hidden">
+                    <input type="number" name="port" placeholder="Port (e.g. 27017)"
+                           class="w-full bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5">
+                </div>
+
+                <div id="submitContainer" class="md:col-span-1">
+                    <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-6 rounded-lg transition-colors">
+                        Monitor
+                    </button>
+                </div>
+            </div>
         </form>
     </div>
 
@@ -36,14 +62,10 @@
         <table class="min-w-full divide-y divide-gray-700/50">
             <thead class="bg-gray-800/60">
             <tr>
-                <th scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
-                <th scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Service Name</th>
-                <th scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">URL</th>
-                <th scope="col"
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Service Name</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">URL / Address</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
             </tr>
             </thead>
 
@@ -56,12 +78,14 @@
                     </span>
                 </td>
 
-                <td class="px-6 py-4 whitespace-nowrap text-white font-medium"
-                    th:text="${item.name}">Name</td>
+                <td class="px-6 py-4 whitespace-nowrap text-white font-medium">
+                    <span th:text="${item.name}">Name</span>
+                    <span th:if="${item.type == 'TCP'}" class="ml-2 px-1.5 py-0.5 text-xs rounded bg-blue-900 text-blue-200">TCP</span>
+                </td>
 
                 <td class="px-6 py-4 whitespace-nowrap text-gray-400">
-                    <a th:href="${item.link}" th:text="${item.link}" target="_blank"
-                       class="hover:text-purple-400 hover:underline">Link</a>
+                    <span th:if="${item.type == 'TCP'}" th:text="${item.link + ':' + item.port}"></span>
+                    <a th:unless="${item.type == 'TCP'}" th:href="${item.link}" th:text="${item.link}" target="_blank" class="hover:text-purple-400 hover:underline">Link</a>
                 </td>
 
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
@@ -70,8 +94,7 @@
                         Edit
                     </a>
 
-                    <form th:action="@{/monitored/delete/{id}(id=${item.id})}" method="post"
-                          style="display:inline;">
+                    <form th:action="@{/monitored/delete/{id}(id=${item.id})}" method="post" style="display:inline;">
                         <button type="submit" onclick="return confirm('Are you sure?')"
                                 class="px-3 py-1 text-xs font-semibold text-white bg-red-600/80 hover:bg-red-500 rounded-md shadow-sm transition-colors">
                             Delete
@@ -80,7 +103,7 @@
                 </td>
             </tr>
 
-            <tr th:if="${#lists.isEmpty(monitoredList)}">
+            <tr th:if="${#lists.isEmpty(monitored)}">
                 <td colspan="4" class="px-6 py-8 text-center text-gray-400">
                     No services monitored yet. Add one above!
                 </td>
@@ -91,7 +114,35 @@
 
 </main>
 
-<!-- EXPÕE O CSRF PARA O JAVASCRIPT (Thymeleaf inline) -->
+<script>
+    function toggleFormFields() {
+        const type = document.getElementById('serviceType').value;
+        const portField = document.getElementById('portField');
+        const addressInput = document.getElementById('addressInput');
+        const submitContainer = document.getElementById('submitContainer');
+
+        if (type === 'TCP') {
+            // Modo TCP
+            portField.classList.remove('hidden');
+            addressInput.placeholder = "Address / IP (e.g. 192.168.1.5)";
+            addressInput.type = "text"; // Permite IPs sem http://
+
+            // Botão ocupa linha nova ou espaço restante
+            submitContainer.classList.remove('md:col-span-1');
+            submitContainer.classList.add('md:col-span-4');
+        } else {
+            // Modo HTTP
+            portField.classList.add('hidden');
+            addressInput.placeholder = "URL (e.g. https://google.com)";
+            addressInput.type = "url"; // Validação de URL
+
+            // Botão volta ao tamanho normal
+            submitContainer.classList.remove('md:col-span-4');
+            submitContainer.classList.add('md:col-span-1');
+        }
+    }
+</script>
+
 <script th:inline="javascript">
     /*<![CDATA[*/
     var csrfHeaderName = /*[[${_csrf.headerName}]]*/ 'X-CSRF-TOKEN';
@@ -99,21 +150,18 @@
     /*]]>*/
 </script>
 
-<!-- SCRIPT PARA CHAMAR /task/start VIA FETCH (COM CSRF E CREDENTIALS) -->
 <script>
     document.getElementById("startButton").addEventListener("click", function () {
-
         fetch("/task/start", {
             method: "POST",
             headers: {
                 [csrfHeaderName]: csrfToken,
                 'Accept': 'text/plain'
             },
-            credentials: 'same-origin' // envia cookie de sessão
+            credentials: 'same-origin'
         })
             .then(response => {
                 if (!response.ok) {
-                    // se quiser debugar, verifique response.status no console
                     throw new Error("Erro ao iniciar monitoramento (status " + response.status + ")");
                 }
                 return response.text();
@@ -125,7 +173,6 @@
                 alert("Erro: " + err.message);
                 console.error(err);
             });
-
     });
 </script>
 
