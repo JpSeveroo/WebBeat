@@ -33,6 +33,7 @@ public class SchedulerService {
 
     @Autowired
     private ObjectFactory<RequestTasks> tasksFactory;
+    private List<Monitored> apis;
 
     private static final Logger LOG = LoggerFactory.getLogger(SchedulerService.class);
 
@@ -49,6 +50,7 @@ public class SchedulerService {
         for (Monitored monitored : allApis) {
             apis.put(monitored.id(), monitored);
         }
+        return apis_id;
     }
 
     public void startScheduler(String taskID, int delay) {
@@ -60,6 +62,10 @@ public class SchedulerService {
 
         RequestTasks task = tasksFactory.getObject();
         task.setUrl(monitored.link());
+        task.setPort(monitored.port());
+        task.setType(monitored.type());
+
+        api_status.put(taskID, "");
 
         if (tasks.containsKey(taskID) && !tasks.get(taskID).isCancelled()) {
             System.out.println("Task " + taskID + " is already running");
@@ -68,12 +74,23 @@ public class SchedulerService {
             tasks.put(taskID, future);
             LOG.info("task running");
         }
+            return "already_running";
+        }
+
+        ScheduledFuture<?> future = scheduler.scheduleWithFixedDelay(task, Duration.ofSeconds(delay));
+        tasks.put(taskID, future);
+        LOG.info("task running");
+        return "ok";
+    }
+
+    public String getStatus(String taskID) {
+        return api_status.get(taskID);
     }
 
     public void stopMonitoring(String taskID) {
         ScheduledFuture<?> future = tasks.get(taskID);
         if (future != null || future.isCancelled()) {
-            System.out.println("Task not runnig");
+            System.out.println("Task not running");
         }
 
         future.cancel(true);

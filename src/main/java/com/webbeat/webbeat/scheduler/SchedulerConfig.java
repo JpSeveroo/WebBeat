@@ -1,9 +1,8 @@
-package com.webbeat.webbeat.config;
+package com.webbeat.webbeat.scheduler;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import reactor.core.scheduler.Scheduler;
 
 @Configuration
 public class SchedulerConfig {
