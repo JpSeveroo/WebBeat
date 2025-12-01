@@ -8,9 +8,9 @@ import java.time.Instant;
 public record LogEntry(
         @Id
         String id,
-        String ownerId,         // Chave Multi-Tenant: Quem é o dono do log
-        String monitoredId,     // ID da URL checada
+        String ownerId,
+        String monitoredId,
         Instant timestamp,
-        Integer statusCode,     // Ex: 200, 404, 500
-        Long responseTime       // Tempo em ms
+        Integer statusCode,
+        Long responseTime
 ) {}

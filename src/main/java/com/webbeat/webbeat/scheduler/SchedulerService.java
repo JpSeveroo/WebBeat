@@ -21,6 +21,7 @@ import java.util.concurrent.ScheduledFuture;
 
 @Service
 public class SchedulerService {
+
     private final ThreadPoolTaskScheduler scheduler;
     private final MonitoredRepository monitoredRepository;
     private Map<String, ScheduledFuture<?>> tasks = new ConcurrentHashMap<>();
@@ -28,7 +29,6 @@ public class SchedulerService {
     @Autowired
     private ObjectFactory<RequestTasks> tasksFactory;
     private List<Monitored> apis;
-
     private static final Logger LOG = LoggerFactory.getLogger(SchedulerService.class);
     @Autowired
     private ReactorResourceFactory reactorResourceFactory;
