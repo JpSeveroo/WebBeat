@@ -2,6 +2,7 @@ package com.webbeat.webbeat.controller;
 
 import com.webbeat.webbeat.dto.MonitoredDTO;
 import com.webbeat.webbeat.model.Monitored;
+import com.webbeat.webbeat.repository.LogRepository;
 import com.webbeat.webbeat.security.CustomUserDetails;
 import com.webbeat.webbeat.service.MonitoredService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,7 +16,7 @@ public class MonitoredController {
 
     private final MonitoredService monitoredService;
 
-    public MonitoredController(MonitoredService monitoredService) {
+    public MonitoredController( MonitoredService monitoredService) {
         this.monitoredService = monitoredService;
     }
 
