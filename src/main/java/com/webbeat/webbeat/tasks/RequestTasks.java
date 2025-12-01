@@ -45,8 +45,10 @@ public class RequestTasks implements Runnable {
     @Override
     public void run() {
         if ("TCP".equalsIgnoreCase(this.type)) {
+            LOG.info("Starting TCP Request");
             checkTCP();
         } else {
+            LOG.info("Starting HTTP Request");
             checkHTTP();
         }
     }
@@ -67,31 +69,37 @@ public class RequestTasks implements Runnable {
     private void checkHTTP(){
         long start = System.currentTimeMillis();
 
-            var request = webClient.get()
+        var request = webClient.get()
                     .uri(this.url)
                     .retrieve()
                     .toBodilessEntity()
                     .map(response -> response.getStatusCode().value())
                     .block();
-            LOG.info("HTTP OK: {} | Status: {}", this.url, this.statusCode);
+        if  (Objects.nonNull(request)) {
+            long duration = System.currentTimeMillis() - start;
+            LOG.info("HTTP OK: {} | Status: {} | ResponseTime: {}", this.url, request,  duration);
 
-        if (request != 200) {
-            LOG.warn(String.format("Request for %s returned status code %d", url, request));
+            if (request != 200) {
+                LOG.warn("Request for {} returned status code {}", url, request);
+            }
+
+            if (!Objects.equals(this.statusCode, request)) {
+                this.statusCode = request;
+            }
+
+            salvarLog(this.statusCode, duration);
+
+            LOG.info(this.statusCode.toString());
+
         }
-        long duration = System.currentTimeMillis() - start;
-        salvarLog(this.statusCode, duration);
-
-        if (!Objects.equals(this.statusCode, request)) {
-            this.statusCode = request;
+        else {
+            LOG.info("Erro na requisição");
         }
-
-        LOG.info(this.statusCode.toString());
-
     }
 
 
     private void salvarLog(int status, long timeMs) {
-        if (monitoredId == null || ownerId == null) return;
+        if (monitoredId != null && ownerId != null) return;
         LogEntry log = new LogEntry(
                 null,
                 ownerId,

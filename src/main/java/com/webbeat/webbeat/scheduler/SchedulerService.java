@@ -68,13 +68,15 @@ public class SchedulerService {
         Monitored monitored = apis.get(taskID);
 
         if (monitored == null) {
-            LOG.warn("No apis found for task {}", taskID);
+            LOG.warn("No apis found for this id {}", taskID);
         }
         else {
             RequestTasks task = tasksFactory.getObject();
+            task.setOwnerId(monitored.ownerId());
+            task.setMonitoredId(monitored.id());
             task.setUrl(monitored.link());
-//          task.setPort(monitored.port());
-//          task.setType(monitored.type());
+            task.setPort(monitored.port());
+            task.setType(monitored.type());
 
             if (tasks.containsKey(taskID) && !tasks.get(taskID).isCancelled()) {
                 System.out.println("Task " + taskID + " is already running");
