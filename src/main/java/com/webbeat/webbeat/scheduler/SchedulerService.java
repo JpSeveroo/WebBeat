@@ -52,8 +52,13 @@ public class SchedulerService {
 
     public void allApis(String userId) {
         List<Monitored> allApis = monitoredRepository.findByOwnerId(userId);
-        for (Monitored monitored : allApis) {
-            apis.put(monitored.id(), monitored);
+        if (allApis.isEmpty()) {
+            LOG.warn("No apis found for user {}", userId);
+        }
+        else {
+            for (Monitored monitored : allApis) {
+                apis.put(monitored.id(), monitored);
+            }
         }
     }
 
@@ -62,17 +67,22 @@ public class SchedulerService {
 
         Monitored monitored = apis.get(taskID);
 
-        RequestTasks task = tasksFactory.getObject();
-        task.setUrl(monitored.link());
-//        task.setPort(monitored.port());
-//        task.setType(monitored.type());
+        if (monitored == null) {
+            LOG.warn("No apis found for task {}", taskID);
+        }
+        else {
+            RequestTasks task = tasksFactory.getObject();
+            task.setUrl(monitored.link());
+//          task.setPort(monitored.port());
+//          task.setType(monitored.type());
 
-        if (tasks.containsKey(taskID) && !tasks.get(taskID).isCancelled()) {
-            System.out.println("Task " + taskID + " is already running");
-        } else if (monitored.beingMonitored()) {
-            ScheduledFuture<?> future = scheduler.scheduleWithFixedDelay(task, Duration.ofSeconds(delay));
-            tasks.put(taskID, future);
-            LOG.info("task running");
+            if (tasks.containsKey(taskID) && !tasks.get(taskID).isCancelled()) {
+                System.out.println("Task " + taskID + " is already running");
+            } else if (monitored.beingMonitored()) {
+                ScheduledFuture<?> future = scheduler.scheduleWithFixedDelay(task, Duration.ofSeconds(delay));
+                tasks.put(taskID, future);
+                LOG.info("task running");
+            }
         }
 
     }

@@ -13,6 +13,8 @@ public record Monitored(
         String ownerId,
         String name,
         String link,
+        Integer port,
+        String type,
         boolean beingMonitored,
         Instant monitoringStartTime
 ) {}
