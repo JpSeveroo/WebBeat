@@ -15,16 +15,15 @@ public class BotListener {
     }
 
     @Scheduled(fixedDelay = 2000)
-    public void verificarComando(){
-        telegramIntegration.getUpdates(lastUpdateId + 1)
-                .subscribe(response -> {
-                    if (response.has("result") && response.get("result").isArray()) {
-                        for (JsonNode update : response.get("result")) {
-                            processarUpdate(update);
-                            lastUpdateId = update.get("update_id").asLong();
-                        }
-                    }
-                });
+    public void verificarComando() {
+        JsonNode response = telegramIntegration.getUpdates(lastUpdateId + 1).block();
+
+        if (response != null && response.has("result") && response.get("result").isArray()) {
+            for (JsonNode update : response.get("result")) {
+                processarUpdate(update);
+                lastUpdateId = update.get("update_id").asLong();
+            }
+        }
     }
 
     private void processarUpdate(JsonNode update) {
@@ -32,25 +31,82 @@ public class BotListener {
 
         String texto = update.get("message").get("text").asText();
         String chatId = update.get("message").get("chat").get("id").asText();
-        String nomeUsuario = update.get("message").get("from").get("first_name").asText();
 
-        // Lógica dos Comandos
-        if (texto.equals("/start")) {
-            String resposta = String.format("👋 Olá, %s! Bem-vindo ao WebBeat.\nEu sou seu assistente de monitoramento.\nUse /help para verificar minha documentação e ficar por dentro de tudo ou dê um /status para identificar o status de monitoramento de suas APIs.", nomeUsuario);
-            telegramIntegration.enviarMensagemDireta(chatId, resposta);
+        String nomeUsuario = update.get("message").get("from").has("first_name")
+                ? update.get("message").get("from").get("first_name").asText()
+                : "Viajante";
+
+        if (texto.equals("/start")){
+            comandoStart(chatId, nomeUsuario);
+        } else if (texto.equals("/menu")) {
+            comandoMenu(chatId);
+        } else if (texto.equals("/status")){
+            comandoStatus(chatId, nomeUsuario);
+        }else if (texto.equals("/suporte")){
+            comandoSuporte(chatId);
+        }else if (texto.equals("/documentacao")){
+            comandoDocumentacao(chatId);
+        }else {
+            telegramIntegration.enviarMensagemDireta(chatId, "🤔 Não entendi... Digite /menu para ver as opções.");
         }
-        else if (texto.equals("/help")) {
-            String resposta = """
-                   Completar o /help depois
-                    """;
-            telegramIntegration.enviarMensagemDireta(chatId, resposta);
-        }
-        else if (texto.equals("/status")) {
-            telegramIntegration.enviarMensagemDireta(chatId, "🔍 Tudo operando normalmente! (Dados simulados)");
-        }
-        else {
-            telegramIntegration.enviarMensagemDireta(chatId, "🤔 Não entendi... Tente usar /help");
-        }
+    }
+
+    private void comandoStart(String chatId, String nome){
+        String msg = String.format("""
+                *👋 Olá, %s!*
+                
+                Bem-vindo ao WebBeat!
+                
+                Eu sou seu assistente de monitoramento. A partir de agora, sempre que uma API ou porta ficar indisponível, você será notificado automaticamente.
+                
+                Para ver a lista de comandos disponíveis:
+                → /menu
+                """, nome);
+        telegramIntegration.enviarMensagemDireta(chatId, msg);
+    }
+
+    private void comandoMenu(String chatId){
+        String  msg = """
+                📂 *Menu WebBeat*
+                
+                [💡] /status — Verifica o estado atual dos serviços monitorados \s
+                [💡] /suporte — Informações de contato e ajuda \s
+                [💡] /documentacao — Acesse o guia completo da aplicação
+                """;
+        telegramIntegration.enviarMensagemDireta(chatId, msg);
+    }
+
+    private void comandoStatus(String chatId, String nome){
+        String msg = String.format("""
+                Em construcao...😭😭😭😭😭😭😭😭😭
+                """);
+        telegramIntegration.enviarMensagemDireta(chatId, msg);
+    }
+
+    private void comandoSuporte(String chatId){
+        String msg = """
+                🛠️ *Suporte Técnico*
+                
+                Precisa de ajuda? Entre em contato com nossa equipe:
+                
+                E-mail: webbeat.suporte@gmail.com \s
+                Tempo médio de resposta: 24h úteis
+                
+                Estamos aqui para ajudar.
+                
+                """;
+        telegramIntegration.enviarMensagemDireta(chatId, msg);
+    }
+
+    private void comandoDocumentacao(String chatId){
+        String msg = """
+                📘 *Documentação Completa*
+                
+                Você pode acessar toda a documentação, exemplos e instruções de uso no link abaixo:
+                
+                *GitHub (README):* https://github.com/JpSeveroo/WebBeat/blob/main/README.md
+                """;
+        telegramIntegration.enviarMensagemDireta(chatId, msg);
     }
 
 }

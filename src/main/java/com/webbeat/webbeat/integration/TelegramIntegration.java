@@ -29,6 +29,7 @@ public class TelegramIntegration {
                         .path(path)
                         .queryParam("chat_id", chatPadrao)
                         .queryParam("text", mensagem)
+                        .queryParam("parse_mode", "Markdown")
                         .build())
                 .retrieve()
                 .bodyToMono(String.class)
@@ -44,6 +45,7 @@ public class TelegramIntegration {
                         .path(path)
                         .queryParam("chat_id", chatId) // Usa o ID de quem chamou
                         .queryParam("text", mensagem)
+                        .queryParam("parse_mode", "Markdown")
                         .build())
                 .retrieve()
                 .bodyToMono(String.class)

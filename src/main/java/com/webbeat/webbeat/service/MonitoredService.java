@@ -65,9 +65,7 @@ public class MonitoredService {
     }
 
     public void removeMonitored(String id, String ownerId) {
-
         Monitored existing = monFindByIdAndOwner(id, ownerId);
-
         monitoredRepository.delete(existing);
     }
 
