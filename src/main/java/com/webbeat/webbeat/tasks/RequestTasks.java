@@ -1,21 +1,24 @@
 package com.webbeat.webbeat.tasks;
 
-import com.webbeat.webbeat.scheduler.SchedulerService;
-
 import com.webbeat.webbeat.model.LogEntry;
 import com.webbeat.webbeat.repository.LogRepository;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Objects;
 
 @Component
 @Scope("prototype")
@@ -42,8 +45,10 @@ public class RequestTasks implements Runnable {
     @Override
     public void run() {
         if ("TCP".equalsIgnoreCase(this.type)) {
+            LOG.info("Starting TCP Request");
             checkTCP();
         } else {
+            LOG.info("Starting HTTP Request");
             checkHTTP();
         }
     }
@@ -60,28 +65,43 @@ public class RequestTasks implements Runnable {
             LOG.warn("TCP FALHA: {}:{} - {}", this.url, this.port, e.getMessage());
         }
     }
+
     private void checkHTTP(){
         long start = System.currentTimeMillis();
 
-        try {
-            this.statusCode = webClient.get()
+        var request = webClient.get()
                     .uri(this.url)
                     .retrieve()
                     .toBodilessEntity()
                     .map(response -> response.getStatusCode().value())
                     .block();
-            LOG.info("HTTP OK: {} | Status: {}", this.url, this.statusCode);
-        } catch (Exception e) {
-            this.statusCode = 500;
-            LOG.warn("HTTP FALHA: {} | Erro: {}", this.url, e.getMessage());
-        }
+        if  (Objects.nonNull(request)) {
+            long duration = System.currentTimeMillis() - start;
+            LOG.info("HTTP OK: {} | Status: {} | ResponseTime: {}", this.url, request,  duration);
 
-        long duration = System.currentTimeMillis() - start;
-        salvarLog(this.statusCode, duration);
+            if (request != 200) {
+                LOG.warn("Request for {} returned status code {}", url, request);
+            }
+
+            if (!Objects.equals(this.statusCode, request)) {
+                this.statusCode = request;
+            }
+
+            salvarLog(this.statusCode, duration);
+
+            LOG.info(this.statusCode.toString());
+
+        }
+        else {
+            LOG.info("Erro na requisição");
+        }
     }
 
+
     private void salvarLog(int status, long timeMs) {
-        if (monitoredId == null || ownerId == null) return;
+        if (monitoredId == null || ownerId == null){
+            return;
+        };
         LogEntry log = new LogEntry(
                 null,
                 ownerId,

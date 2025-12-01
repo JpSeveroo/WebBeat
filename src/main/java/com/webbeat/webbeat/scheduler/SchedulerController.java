@@ -16,13 +16,14 @@ public class SchedulerController {
         this.schedulerService = schedulerService;
     }
 
-    @PostMapping("/start")
-    public String startMonitoring(@AuthenticationPrincipal CustomUserDetails user) {
-        return schedulerService.startScheduler(user.getId(), 1);
+    @PostMapping("/start/{id}")
+    public void startMonitoring(@AuthenticationPrincipal CustomUserDetails user,  @PathVariable String id) {
+        schedulerService.allApis(user.getId());
+        schedulerService.startScheduler(id, 1);
     }
 
     @GetMapping("/status")
-    public String getStatus(@PathVariable String taskID) {
+    public Integer getStatus(@PathVariable String taskID) {
         return schedulerService.getStatus(taskID);
     }
 
