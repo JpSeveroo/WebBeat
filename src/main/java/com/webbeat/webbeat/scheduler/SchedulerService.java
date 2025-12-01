@@ -59,6 +59,8 @@ public class SchedulerService {
         task.setUrl(monitored.link());
         task.setPort(monitored.port());
         task.setType(monitored.type());
+        task.setMonitoredId(monitored.id());
+        task.setOwnerId(ownerID);
 
         api_status.put(taskID, "");
 
