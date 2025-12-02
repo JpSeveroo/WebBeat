@@ -9,7 +9,9 @@ import java.util.Optional;
 public interface LogRepository extends MongoRepository<LogEntry, String> {
 
     List<LogEntry> findByOwnerIdAndTimestampAfter(String ownerId, Instant timestamp);
+
     long countByOwnerIdAndStatusCodeNot(String ownerId, Integer statusCode);
 
     Optional<LogEntry> findTopByOwnerIdAndMonitoredIdOrderByTimestampDesc(String ownerId, String monitoredId);
+
 }
