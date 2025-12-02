@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
 public class UserController {
-    @GetMapping("/user")
+    @GetMapping("/settings")
     public String settingsPage(Model model) {
         model.addAttribute("activePage", "settings");
 

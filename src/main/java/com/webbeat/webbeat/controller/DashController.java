@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
-@RequestMapping("/dashboard")
 public class DashController {
 
     private final ReportService reportService;
@@ -27,28 +26,16 @@ public class DashController {
         return "dashboard";
     }
 
-    // Método /settings consolidado
-    @GetMapping("/settings")
-    public String settingsPage(Model model) {
-        model.addAttribute("activePage", "settings");
-        return "settings";
-    }
-
-    /**
-     * Endpoint API REST para retornar as estatísticas do Dashboard em JSON.
-     */
     @GetMapping("/dashboard/stats")
     @ResponseBody
     public DashboardStatsDTO getDashboardStats(@AuthenticationPrincipal CustomUserDetails user) {
-        // Extração segura do userId (chave multi-tenant)
         String userId = user.getId();
 
-        // Chama o serviço para calcular as métricas filtradas
         return reportService.getDashboardStats(userId);
     }
 
     @GetMapping("/logout-success")
     public String logoutPage() {
-        return "redirect:/auth/logout";
+        return "redirect:/auth/login";
     }
 }

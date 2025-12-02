@@ -14,3 +14,4 @@ public record LogEntry(
         Integer statusCode,
         Long responseTime
 ) {}
+
