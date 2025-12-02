@@ -9,6 +9,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.client.ReactorResourceFactory;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Repository;
@@ -26,23 +30,21 @@ import java.util.concurrent.ScheduledFuture;
 
 @Service
 public class SchedulerService {
+
     private final ThreadPoolTaskScheduler scheduler;
-
     private final LogRepository logRepository;
-
     private final MonitoredRepository monitoredRepository;
-
     private Map<String, ScheduledFuture<?>> tasks = new ConcurrentHashMap<>();
-
     public Map<String, Monitored> apis = new ConcurrentHashMap<>();
-
-    @Autowired
-    private ObjectFactory<RequestTasks> tasksFactory;
-
     private static final Logger LOG = LoggerFactory.getLogger(SchedulerService.class);
 
     @Autowired
     private ReactorResourceFactory reactorResourceFactory;
+    @Autowired
+    private MongoTemplate mongoTemplate;
+    @Autowired
+    private ObjectFactory<RequestTasks> tasksFactory;
+
 
     public SchedulerService(ThreadPoolTaskScheduler scheduler, LogRepository logRepository, MonitoredRepository monitoredRepository) {
         this.scheduler = scheduler;
@@ -90,8 +92,33 @@ public class SchedulerService {
     }
 
 
-    public Integer getStatus(String taskID) {
-        LogEntry log = logRepository.findById(taskID).orElse(null);
+    public void allowMonitoring(String taskID) {
+        List<Monitored> allowed = new ArrayList<>() ;
+
+        for (Monitored monitored : apis.values()) {
+            if (monitored.beingMonitored()) {
+                allowed.add(monitored);
+            }
+        }
+
+        if (allowed.size() == 5) {
+            LOG.info("There are more than 5 tasks to allow");
+        }
+        else {
+            Query query = new Query(Criteria.where("_id").is(taskID));
+            Update update = new Update().set("beingMonitored", true);
+            mongoTemplate.updateFirst(query, update, Monitored.class);
+        }
+    }
+
+    public void removeMonitoring(String taskID) {
+        Query query = new Query(Criteria.where("_id").is(taskID));
+        Update update = new Update().set("beingMonitored", false);
+        mongoTemplate.updateFirst(query, update, Monitored.class);
+    }
+
+    public Integer getStatus(String ownerId, String monitoredId) {
+        LogEntry log = logRepository.findTopByOwnerIdAndMonitoredIdOrderByTimestampDesc(ownerId, monitoredId).orElse(null);
         return log.statusCode();
     }
 

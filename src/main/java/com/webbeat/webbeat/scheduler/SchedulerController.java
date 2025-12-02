@@ -1,5 +1,6 @@
 package com.webbeat.webbeat.scheduler;
 
+import com.webbeat.webbeat.model.LogEntry;
 import com.webbeat.webbeat.security.CustomUserDetails;
 import com.webbeat.webbeat.scheduler.SchedulerService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,8 +24,8 @@ public class SchedulerController {
     }
 
     @GetMapping("/status")
-    public Integer getStatus(@PathVariable String taskID) {
-        return schedulerService.getStatus(taskID);
+    public Integer getStatus(@AuthenticationPrincipal CustomUserDetails user, @PathVariable String taskID) {
+        return schedulerService.getStatus(user.getId(), taskID);
     }
 
 }

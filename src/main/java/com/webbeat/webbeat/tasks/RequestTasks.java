@@ -99,7 +99,9 @@ public class RequestTasks implements Runnable {
 
 
     private void salvarLog(int status, long timeMs) {
-        if (monitoredId != null && ownerId != null) return;
+        if (monitoredId == null && ownerId == null) {
+            return;
+        }
         LogEntry log = new LogEntry(
                 null,
                 ownerId,
