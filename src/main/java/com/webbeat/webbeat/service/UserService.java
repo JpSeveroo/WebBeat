@@ -12,7 +12,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class UserService {
@@ -21,6 +23,8 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final PasswordResetRepository passwordResetRepository;
     private final JavaMailSender javaMailSender;
+    private final Map<String, Long> rateLimitMap = new ConcurrentHashMap<>();
+    private static final long RATE_LIMIT_DURATION = 24 * 60 * 60 * 1000L;
 
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, PasswordResetRepository passwordResetRepository, JavaMailSender javaMailSender) {
         this.userRepository = userRepository;
@@ -53,6 +57,14 @@ public class UserService {
             return;
         }
 
+        long currentTime = System.currentTimeMillis();
+        long lastRequestTime = rateLimitMap.getOrDefault(email, 0L);
+
+        if (currentTime - lastRequestTime < RATE_LIMIT_DURATION) {
+            return;
+        }
+        rateLimitMap.put(email, currentTime);
+
         String token = UUID.randomUUID().toString();
         Instant expiry = Instant.now().plus(15, ChronoUnit.MINUTES);
 
@@ -66,17 +78,6 @@ public class UserService {
         passwordResetRepository.save(passwordResetToken);
 
         sendResetEmail(user.email(), token);
-    }
-
-    private void sendResetEmail(String email, String token) {
-        String resetUrl = "localhost:8080/auth/reset-password?token=" + token;
-
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(email);
-        message.setSubject("WebBeat - Password Reset Request");
-        message.setText("Click the link below to reset your password:\n\n" + resetUrl + "\n\nLink expires in 15 minutes.");
-
-        javaMailSender.send(message);
     }
 
     public void completeResetPassword(String token, String newPassword) {
@@ -102,6 +103,46 @@ public class UserService {
         userRepository.save(updatedUser);
 
         passwordResetRepository.delete(resetToken);
+    }
+
+    private void sendResetEmail(String email, String token) {
+        String resetUrl = "http://localhost:8080/auth/reset-password?token=" + token;
+        
+        String htmlContent = """
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #111827; color: #ffffff; border-radius: 10px;">
+                <h2 style="color: #a78bfa; text-align: center;">WebBeat Security</h2>
+                <p style="font-size: 16px; color: #d1d5db; text-align: center;">
+                    You have requested to reset your password. Click the button below to proceed.
+                </p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="%s" style="background-color: #7c3aed; color: #ffffff; padding: 14px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; display: inline-block;">
+                        Reset Password
+                    </a>
+                </div>
+                <p style="font-size: 14px; color: #9ca3af; text-align: center;">
+                    This link expires in 15 minutes. If you did not request this, please ignore this email.
+                </p>
+                <hr style="border: 0; border-top: 1px solid #374151; margin: 20px 0;">
+                <p style="font-size: 12px; color: #6b7280; text-align: center;">
+                    WebBeat Monitoring Systems
+                </p>
+            </div>
+            """.formatted(resetUrl);
+
+        try {
+            jakarta.mail.internet.MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+            org.springframework.mail.javamail.MimeMessageHelper helper = new org.springframework.mail.javamail.MimeMessageHelper(mimeMessage, "utf-8");
+
+            helper.setText(htmlContent, true); // true = Enable HTML
+            helper.setTo(email);
+            helper.setSubject("WebBeat - Reset Your Password");
+            helper.setFrom("webbeat.suporte@gmail.com");
+
+            javaMailSender.send(mimeMessage);
+
+        } catch (jakarta.mail.MessagingException e) {
+            throw new IllegalStateException("Failed to send email", e);
+        }
     }
 }
 

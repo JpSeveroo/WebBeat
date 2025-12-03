@@ -8,4 +8,5 @@ public interface PasswordResetRepository extends MongoRepository<PasswordResetTo
 
     PasswordResetToken findByToken(String token);
 
+    PasswordResetToken findByUserId(String userId);
 }
