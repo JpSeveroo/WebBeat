@@ -33,9 +33,4 @@ public class DashController {
 
         return reportService.getDashboardStats(userId);
     }
-
-    @GetMapping("/logout-success")
-    public String logoutPage() {
-        return "redirect:/auth/login";
-    }
 }

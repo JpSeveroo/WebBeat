@@ -25,7 +25,8 @@ public class SecurityConfig {
                 .defaultSuccessUrl("/dashboard", true)
                 )
                 .logout((logout) -> logout
-                        .logoutSuccessUrl("/auth/logout")
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/auth/login")
                         .permitAll()
                 );
         return http.build();
