@@ -102,12 +102,10 @@
         const eyeSlashIcon = document.getElementById('eyeSlashIcon');
 
         if (passwordInput.type === 'password') {
-            // Mostrar senha
             passwordInput.type = 'text';
             eyeIcon.classList.add('hidden');
             eyeSlashIcon.classList.remove('hidden');
         } else {
-            // Ocultar senha
             passwordInput.type = 'password';
             eyeIcon.classList.remove('hidden');
             eyeSlashIcon.classList.add('hidden');
