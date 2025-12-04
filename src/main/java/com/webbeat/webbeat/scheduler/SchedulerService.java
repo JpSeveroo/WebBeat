@@ -49,7 +49,8 @@ public class SchedulerService {
     private ObjectFactory<RequestTasks> tasksFactory;
 
 
-    public SchedulerService(ThreadPoolTaskScheduler scheduler, LogRepository logRepository, MonitoredRepository monitoredRepository) {
+    public SchedulerService(ThreadPoolTaskScheduler scheduler, LogRepository logRepository, MonitoredRepository monitoredRepository, MonitoredService monitoredService) {
+        this.monitoredService = monitoredService;
         this.scheduler = scheduler;
         this.logRepository = logRepository;
         this.monitoredRepository = monitoredRepository;
@@ -102,7 +103,7 @@ public class SchedulerService {
             LOG.info("There are more than 5 tasks to allow");
         }
         else {
-            monitoredService.toggleMonitored(ownerID, taskID, true);
+            monitoredService.toggleMonitored(taskID, ownerID, true);
         }
     }
 
