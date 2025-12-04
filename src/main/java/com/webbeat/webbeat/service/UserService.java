@@ -1,5 +1,6 @@
 package com.webbeat.webbeat.service;
 
+import com.webbeat.webbeat.dto.ChangePasswordDTO;
 import com.webbeat.webbeat.dto.UserDTO;
 import com.webbeat.webbeat.model.PasswordResetToken;
 import com.webbeat.webbeat.model.User;
@@ -48,6 +49,28 @@ public class UserService {
         );
 
         return userRepository.save(user);
+    }
+
+    public void changePasswordSettingsPage (String userId, ChangePasswordDTO dto) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("User not found."));
+
+        if (!passwordEncoder.matches(dto.currentPassword(), user.passwordHash())){
+            throw new IllegalStateException("Current password does not match.");
+        }
+
+        if (!dto.isConfirmed()) {
+            throw new IllegalStateException("New password and confirmation do not match.");
+        }
+
+        User updatedUser = new User(
+                user.id(),
+                user.email(),
+                passwordEncoder.encode(dto.newPassword())
+        );
+        userRepository.save(updatedUser);
+
     }
 
     public void requestPasswordReset(String email) {

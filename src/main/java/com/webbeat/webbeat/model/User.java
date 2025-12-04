@@ -4,7 +4,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "users")
-public record User( //Só pra explicar, tamo usando record por tratarmos de dados imutáveis
+public record User(
         @Id
         String id,
         String email,
