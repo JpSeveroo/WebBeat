@@ -3,6 +3,7 @@ package com.webbeat.webbeat.controller;
 import com.webbeat.webbeat.dto.MonitoredDTO;
 import com.webbeat.webbeat.model.Monitored;
 import com.webbeat.webbeat.repository.LogRepository;
+import com.webbeat.webbeat.scheduler.SchedulerService;
 import com.webbeat.webbeat.security.CustomUserDetails;
 import com.webbeat.webbeat.service.MonitoredService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,13 +16,17 @@ import org.springframework.web.bind.annotation.*;
 public class MonitoredController {
 
     private final MonitoredService monitoredService;
+    private final SchedulerService schedulerService;
 
-    public MonitoredController( MonitoredService monitoredService) {
+    public MonitoredController(MonitoredService monitoredService, SchedulerService schedulerService) {
         this.monitoredService = monitoredService;
+        this.schedulerService = schedulerService;
     }
 
     @GetMapping
     public String readMonitored(Model model, @AuthenticationPrincipal CustomUserDetails user) {
+
+        schedulerService.allApis(user.getId());
 
         var myMonitored = monitoredService.monFindByOwnerId(user.getId());
 

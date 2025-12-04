@@ -17,15 +17,30 @@ public class SchedulerController {
         this.schedulerService = schedulerService;
     }
 
-    @PostMapping("/start/{id}")
-    public void startMonitoring(@AuthenticationPrincipal CustomUserDetails user,  @PathVariable String id) {
+    @PostMapping("/start/{delay}")
+    public void startMonitoring(@PathVariable Integer delay, @AuthenticationPrincipal CustomUserDetails user) {
         schedulerService.allApis(user.getId());
-        schedulerService.startScheduler(id, 1);
+        schedulerService.startScheduler(delay);
     }
 
-    @GetMapping("/status")
-    public Integer getStatus(@AuthenticationPrincipal CustomUserDetails user, @PathVariable String taskID) {
-        return schedulerService.getStatus(user.getId(), taskID);
+    @PostMapping("/stop")
+    public void stopMonitoring() {
+        schedulerService.stopMonitoring();
+    }
+
+    @PatchMapping("/allow/{id}")
+    public void allow(@AuthenticationPrincipal CustomUserDetails user, @PathVariable String id) {
+        schedulerService.allowMonitoring(user.getId(), id);
+    }
+
+    @PatchMapping("/remove/{id}")
+    public void remove(@AuthenticationPrincipal CustomUserDetails user, @PathVariable String id) {
+        schedulerService.removeMonitoring(user.getId(), id);
+    }
+
+    @GetMapping("/status/{id}")
+    public Integer getStatus(@AuthenticationPrincipal CustomUserDetails user, @PathVariable String id) {
+        return schedulerService.getStatus(user.getId(), id);
     }
 
 }

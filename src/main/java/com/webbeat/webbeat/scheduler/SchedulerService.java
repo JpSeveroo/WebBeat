@@ -4,6 +4,7 @@ import com.webbeat.webbeat.model.LogEntry;
 import com.webbeat.webbeat.model.Monitored;
 import com.webbeat.webbeat.repository.LogRepository;
 import com.webbeat.webbeat.repository.MonitoredRepository;
+import com.webbeat.webbeat.service.MonitoredService;
 import com.webbeat.webbeat.tasks.RequestTasks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +39,8 @@ public class SchedulerService {
     public Map<String, Monitored> apis = new ConcurrentHashMap<>();
     private static final Logger LOG = LoggerFactory.getLogger(SchedulerService.class);
 
+    private MonitoredService monitoredService;
+
     @Autowired
     private ReactorResourceFactory reactorResourceFactory;
     @Autowired
@@ -64,35 +67,29 @@ public class SchedulerService {
         }
     }
 
-    public void startScheduler(String taskID, int delay) {
-        LOG.info(taskID);
-
-        Monitored monitored = apis.get(taskID);
-
-        if (monitored == null) {
-            LOG.warn("No apis found for this id {}", taskID);
-        }
-        else {
-            RequestTasks task = tasksFactory.getObject();
-            task.setOwnerId(monitored.ownerId());
-            task.setMonitoredId(monitored.id());
-            task.setUrl(monitored.link());
-            task.setPort(monitored.port());
-            task.setType(monitored.type());
-
-            if (tasks.containsKey(taskID) && !tasks.get(taskID).isCancelled()) {
-                System.out.println("Task " + taskID + " is already running");
-            } else if (monitored.beingMonitored()) {
-                ScheduledFuture<?> future = scheduler.scheduleWithFixedDelay(task, Duration.ofSeconds(delay));
-                tasks.put(taskID, future);
-                LOG.info("task running");
+    public void startScheduler(int delay) {
+        for (Monitored monitored : apis.values()) {
+            if (monitored.beingMonitored()) {
+                if (tasks.containsKey(monitored.id()) && !tasks.get(monitored.id()).isCancelled()) {
+                    System.out.println("Task " + monitored.id() + " is already running");
+                } else {
+                    LOG.info("Starting scheduler for {}", monitored.name());
+                    RequestTasks task = tasksFactory.getObject();
+                    task.setOwnerId(monitored.ownerId());
+                    task.setMonitoredId(monitored.id());
+                    task.setUrl(monitored.link());
+                    task.setPort(monitored.port());
+                    task.setType(monitored.type());
+                    ScheduledFuture<?> future = scheduler.scheduleWithFixedDelay(task, Duration.ofSeconds(delay));
+                    tasks.put(monitored.id(), future);
+                    LOG.info("task running");
+                }
             }
         }
-
     }
 
 
-    public void allowMonitoring(String taskID) {
+    public void allowMonitoring(String ownerID, String taskID) {
         List<Monitored> allowed = new ArrayList<>() ;
 
         for (Monitored monitored : apis.values()) {
@@ -105,16 +102,12 @@ public class SchedulerService {
             LOG.info("There are more than 5 tasks to allow");
         }
         else {
-            Query query = new Query(Criteria.where("_id").is(taskID));
-            Update update = new Update().set("beingMonitored", true);
-            mongoTemplate.updateFirst(query, update, Monitored.class);
+            monitoredService.toggleMonitored(ownerID, taskID, true);
         }
     }
 
-    public void removeMonitoring(String taskID) {
-        Query query = new Query(Criteria.where("_id").is(taskID));
-        Update update = new Update().set("beingMonitored", false);
-        mongoTemplate.updateFirst(query, update, Monitored.class);
+    public void removeMonitoring(String ownerID, String taskID) {
+        monitoredService.toggleMonitored(ownerID, taskID, false);
     }
 
     public Integer getStatus(String ownerId, String monitoredId) {
@@ -122,14 +115,16 @@ public class SchedulerService {
         return log.statusCode();
     }
 
-    public void stopMonitoring(String taskID) {
-        ScheduledFuture<?> future = tasks.get(taskID);
-        if (future != null || future.isCancelled()) {
-            LOG.info("Task not running");
-        } else {
-            future.cancel(true);
-            tasks.remove(taskID);
-            LOG.info("task stopped");
+    public void stopMonitoring() {
+        for (Monitored monitored : apis.values()) {
+            ScheduledFuture<?> future = tasks.get(monitored.id());
+            if (future != null || future.isCancelled()) {
+                LOG.info("Task not running");
+            } else {
+                future.cancel(true);
+                tasks.remove(monitored.id());
+                LOG.info("task stopped");
+            }
         }
     }
 
