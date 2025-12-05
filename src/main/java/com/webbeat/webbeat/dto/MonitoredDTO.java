@@ -4,5 +4,6 @@ public record MonitoredDTO(
         String name,
         String link,
         Integer port,
-        String type
+        String type,
+        Integer interval
 ){}

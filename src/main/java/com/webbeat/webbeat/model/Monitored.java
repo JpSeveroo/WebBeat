@@ -14,5 +14,6 @@ public record Monitored(
         Integer port,
         String type,
         boolean beingMonitored,
-        Instant monitoringStartTime
+        Instant monitoringStartTime,
+        Integer interval
 ) {}
