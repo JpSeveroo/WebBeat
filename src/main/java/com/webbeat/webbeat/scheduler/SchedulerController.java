@@ -29,8 +29,11 @@ public class SchedulerController {
     }
 
     @PatchMapping("/allow/{id}")
-    public void allow(@AuthenticationPrincipal CustomUserDetails user, @PathVariable String id) {
-        schedulerService.allowMonitoring(user.getId(), id);
+    public void allow(@AuthenticationPrincipal CustomUserDetails user,
+                      @PathVariable String id,
+                      @RequestParam(defaultValue = "30") Integer delay) {
+
+        schedulerService.allowMonitoring(user.getId(), id, delay);
     }
 
     @PatchMapping("/remove/{id}")

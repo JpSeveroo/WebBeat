@@ -62,7 +62,7 @@ public class MonitoredController {
 
         Monitored monitored = monitoredService.monFindByIdAndOwner(id, user.getId());
 
-        MonitoredDTO monitoredDTO = new MonitoredDTO(monitored.name(), monitored.link(), monitored.port(), monitored.type());
+        MonitoredDTO monitoredDTO = new MonitoredDTO(monitored.name(), monitored.link(), monitored.port(), monitored.type(), monitored.interval());
 
         model.addAttribute("monitored", monitoredDTO);
         model.addAttribute("id", id);
