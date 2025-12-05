@@ -41,10 +41,28 @@ public class MonitoredService {
                 monitoredDTO.port(),
                 monitoredDTO.type(),
                 false,
-                null
+                null,
+                monitoredDTO.interval() != null ? monitoredDTO.interval() : 30
         );
-
         return monitoredRepository.save(newMonitored);
+    }
+
+    public Monitored updateStatusAndInterval(String id, String ownerId, boolean state, Integer newInterval) {
+        Monitored existing = monFindByIdAndOwner(id, ownerId);
+        Instant counter = state ? Instant.now() : null;
+
+        Monitored updated = new Monitored(
+                existing.id(),
+                ownerId,
+                existing.name(),
+                existing.link(),
+                existing.port(),
+                existing.type(),
+                state,
+                counter,
+                newInterval != null ? newInterval : existing.interval()
+        );
+        return monitoredRepository.save(updated);
     }
 
     public Monitored updateMonitored(String id, String ownerId, MonitoredDTO monitoredDTO) {
@@ -59,7 +77,8 @@ public class MonitoredService {
                 monitoredDTO.port(),
                 monitoredDTO.type(),
                 existing.beingMonitored(),
-                existing.monitoringStartTime()
+                existing.monitoringStartTime(),
+                monitoredDTO.interval() != null ? monitoredDTO.interval() : existing.interval()
         );
         return monitoredRepository.save(updated);
     }
@@ -86,7 +105,8 @@ public class MonitoredService {
                 existing.port(),
                 existing.type(),
                 state,
-                counter
+                counter,
+                existing.interval()
         );
         return monitoredRepository.save(toggled);
     }
