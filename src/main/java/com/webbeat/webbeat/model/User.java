@@ -8,5 +8,6 @@ public record User(
         @Id
         String id,
         String email,
-        String passwordHash
+        String passwordHash,
+        String telegramChatId
 ) {}

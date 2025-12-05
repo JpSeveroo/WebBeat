@@ -12,7 +12,7 @@ public class TelegramService {
         this.telegramIntegration = telegramIntegration;
     }
 
-    public void notificarFalha(String nomeServico, String link, String erro) {
+    public void notificarFalha(String targetChatId, String nomeServico, String link, String erro) {
         String texto = String.format("""
                 🚨 *ALERTA DE FALHA* 🚨
                 🔴 *Serviço:* %s
@@ -20,6 +20,6 @@ public class TelegramService {
                 ⚠️ *Erro:* %s
                 """, nomeServico, link, erro);
 
-        telegramIntegration.enviarMensagem(texto);
+        telegramIntegration.enviarMensagemDireta(targetChatId, texto);
     }
 }

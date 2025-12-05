@@ -64,4 +64,19 @@ public class UserController {
         redirectAttributes.addFlashAttribute("successMessage", "Password changed successfully.");
         return "redirect:/settings";
     }
+
+    @PostMapping("/update-telegram")
+    public String updateTelegram(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                 @org.springframework.web.bind.annotation.RequestParam String telegramChatId,
+                                 RedirectAttributes redirectAttributes) {
+        try {
+            userService.updateTelegramSettings(userDetails.getId(), telegramChatId);
+            com.webbeat.webbeat.model.User usuarioAtualizado = userService.findById(userDetails.getId());
+            userDetails.setUser(usuarioAtualizado);
+            redirectAttributes.addFlashAttribute("successMessage", "Telegram configurado com sucesso!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Erro ao salvar: " + e.getMessage());
+        }
+        return "redirect:/settings";
+    }
 }

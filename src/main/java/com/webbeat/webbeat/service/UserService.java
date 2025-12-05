@@ -6,7 +6,6 @@ import com.webbeat.webbeat.model.PasswordResetToken;
 import com.webbeat.webbeat.model.User;
 import com.webbeat.webbeat.repository.PasswordResetRepository;
 import com.webbeat.webbeat.repository.UserRepository;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -45,7 +44,8 @@ public class UserService {
         User user = new User (
                 null,
                 request.email(),
-                passwordHash
+                passwordHash,
+                null
         );
 
         return userRepository.save(user);
@@ -67,7 +67,8 @@ public class UserService {
         User updatedUser = new User(
                 user.id(),
                 user.email(),
-                passwordEncoder.encode(dto.newPassword())
+                passwordEncoder.encode(dto.newPassword()),
+                user.telegramChatId()
         );
         userRepository.save(updatedUser);
 
@@ -121,7 +122,8 @@ public class UserService {
         User updatedUser = new User(
                 user.id(),
                 user.email(),
-                passwordEncoder.encode(newPassword)
+                passwordEncoder.encode(newPassword),
+                user.telegramChatId()
         );
         userRepository.save(updatedUser);
 
@@ -130,7 +132,7 @@ public class UserService {
 
     private void sendResetEmail(String email, String token) {
         String resetUrl = "http://localhost:8080/auth/reset-password?token=" + token;
-        
+
         String htmlContent = """
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #111827; color: #ffffff; border-radius: 10px;">
                 <h2 style="color: #a78bfa; text-align: center;">WebBeat Security</h2>
@@ -156,7 +158,7 @@ public class UserService {
             jakarta.mail.internet.MimeMessage mimeMessage = javaMailSender.createMimeMessage();
             org.springframework.mail.javamail.MimeMessageHelper helper = new org.springframework.mail.javamail.MimeMessageHelper(mimeMessage, "utf-8");
 
-            helper.setText(htmlContent, true); // true = Enable HTML
+            helper.setText(htmlContent, true);
             helper.setTo(email);
             helper.setSubject("WebBeat - Reset Your Password");
             helper.setFrom("webbeat.suporte@gmail.com");
@@ -167,6 +169,26 @@ public class UserService {
             throw new IllegalStateException("Failed to send email", e);
         }
     }
+
+    public void updateTelegramSettings(String userId, String telegramChatId){
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("User not found"));
+
+        User updatedUser = new User(
+                user.id(),
+                user.email(),
+                user.passwordHash(),
+                telegramChatId
+        );
+
+        userRepository.save(updatedUser);
+    }
+
+    public User findById(String userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("User not found"));
+    }
+
 }
 
 

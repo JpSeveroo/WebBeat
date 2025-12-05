@@ -2,16 +2,29 @@ package com.webbeat.webbeat.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.webbeat.webbeat.integration.TelegramIntegration;
+import com.webbeat.webbeat.model.Monitored;
+import com.webbeat.webbeat.model.User;
+import com.webbeat.webbeat.repository.UserRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class BotListener {
     private final TelegramIntegration telegramIntegration;
+    private final UserRepository userRepository;      // NOVO
+    private final MonitoredService monitoredService;  // NOVO
+
     private long lastUpdateId = 0;
 
-    public BotListener(TelegramIntegration telegramIntegration){
+    public BotListener(TelegramIntegration telegramIntegration,
+                       UserRepository userRepository,
+                       MonitoredService monitoredService) {
         this.telegramIntegration = telegramIntegration;
+        this.userRepository = userRepository;
+        this.monitoredService = monitoredService;
     }
 
     @Scheduled(fixedDelay = 2000)
@@ -41,14 +54,50 @@ public class BotListener {
         } else if (texto.equals("/menu")) {
             comandoMenu(chatId);
         } else if (texto.equals("/status")){
-            comandoStatus(chatId, nomeUsuario);
-        }else if (texto.equals("/suporte")){
+            comandoStatus(chatId); // Agora chama a nova versão
+        } else if (texto.equals("/suporte")){
             comandoSuporte(chatId);
-        }else if (texto.equals("/documentacao")){
+        } else if (texto.equals("/documentacao")){
             comandoDocumentacao(chatId);
-        }else {
+        } else if (texto.equals("/id")) {
+            comandoMeuid(chatId);
+        } else {
             telegramIntegration.enviarMensagemDireta(chatId, "🤔 Não entendi... Digite /menu para ver as opções.");
         }
+    }
+
+    private void comandoStatus(String chatId) {
+        Optional<User> userOpt = userRepository.findByTelegramChatId(chatId);
+
+        if (userOpt.isEmpty()) {
+            telegramIntegration.enviarMensagemDireta(chatId,
+                    "⚠️ *Conta não vinculada!* \n\nVocê ainda não configurou este Telegram na sua conta WebBeat.\nDigite /id para saber seu código e configure no painel do site.");
+            return;
+        }
+
+        User user = userOpt.get();
+        List<Monitored> servicos = monitoredService.monFindByOwnerId(user.id());
+
+        if (servicos.isEmpty()) {
+            telegramIntegration.enviarMensagemDireta(chatId,
+                    "📂 *Seus Serviços*\n\nVocê ainda não cadastrou nenhum serviço para monitorar.");
+            return;
+        }
+
+        StringBuilder relatorio = new StringBuilder();
+        relatorio.append("📊 *Status dos Serviços (" + servicos.size() + ")*\n\n");
+
+        for (Monitored servico : servicos) {
+            String statusIcon = servico.beingMonitored() ? "🟢" : "🔴";
+            String statusText = servico.beingMonitored() ? "Monitorando" : "Pausado";
+
+            relatorio.append(String.format("%s *%s*\n", statusIcon, servico.name()));
+            relatorio.append(String.format("🔗 %s\n", servico.link()));
+            relatorio.append(String.format("⏱ %ds  |  Status: %s\n", servico.interval(), statusText));
+            relatorio.append("───────────────\n");
+        }
+
+        telegramIntegration.enviarMensagemDireta(chatId, relatorio.toString());
     }
 
     private void comandoStart(String chatId, String nome){
@@ -56,8 +105,7 @@ public class BotListener {
                 *👋 Olá, %s!*
                 
                 Bem-vindo ao WebBeat!
-                
-                Eu sou seu assistente de monitoramento. A partir de agora, sempre que uma API ou porta ficar indisponível, você será notificado automaticamente.
+                Eu sou seu assistente de monitoramento.
                 
                 Para ver a lista de comandos disponíveis:
                 → /menu
@@ -69,17 +117,22 @@ public class BotListener {
         String  msg = """
                 📂 *Menu WebBeat*
                 
-                [💡] /status — Verifica o estado atual dos serviços monitorados \s
-                [💡] /suporte — Informações de contato e ajuda \s
-                [💡] /documentacao — Acesse o guia completo da aplicação
+                [💡] /status — Verifica seus serviços e status atual
+                [💡] /id — Descubra seu Chat ID para configurar no site
+                [💡] /suporte — Informações de contato e ajuda
+                [💡] /documentacao — Acesse o guia completo
                 """;
         telegramIntegration.enviarMensagemDireta(chatId, msg);
     }
 
-    private void comandoStatus(String chatId, String nome){
+    private void comandoMeuid(String chatId) {
         String msg = String.format("""
-                Em construcao...😭😭😭😭😭😭😭😭😭
-                """);
+                🆔 *Seu Telegram Chat ID é:*
+                
+                `%s`
+                
+                Copie este número e cole nas configurações do WebBeat para ativar seus alertas.
+                """, chatId);
         telegramIntegration.enviarMensagemDireta(chatId, msg);
     }
 
@@ -89,11 +142,8 @@ public class BotListener {
                 
                 Precisa de ajuda? Entre em contato com nossa equipe:
                 
-                E-mail: webbeat.suporte@gmail.com \s
+                E-mail: webbeat.suporte@gmail.com
                 Tempo médio de resposta: 24h úteis
-                
-                Estamos aqui para ajudar.
-                
                 """;
         telegramIntegration.enviarMensagemDireta(chatId, msg);
     }
@@ -102,11 +152,9 @@ public class BotListener {
         String msg = """
                 📘 *Documentação Completa*
                 
-                Você pode acessar toda a documentação, exemplos e instruções de uso no link abaixo:
-                
-                *GitHub (README):* https://github.com/JpSeveroo/WebBeat/blob/main/README.md
+                Acesse o guia no GitHub:
+                https://github.com/JpSeveroo/WebBeat/blob/main/README.md
                 """;
         telegramIntegration.enviarMensagemDireta(chatId, msg);
     }
-
 }

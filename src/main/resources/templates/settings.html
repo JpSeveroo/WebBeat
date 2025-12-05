@@ -17,6 +17,11 @@
             <span th:text="${successMessage}"></span>
         </div>
 
+        <div th:if="${errorMessage}" class="p-4 rounded-lg bg-red-900/50 border border-red-800 text-red-200 flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span th:text="${errorMessage}"></span>
+        </div>
+
         <div class="bg-gray-800/50 rounded-xl border border-gray-700/50 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-700/50 bg-gray-800/80 flex items-center">
                 <div class="p-2 bg-purple-600/20 rounded-lg text-purple-400 mr-4">
@@ -48,21 +53,72 @@
             </div>
         </div>
 
-        <div class="bg-gray-800/20 rounded-xl border-2 border-dashed border-gray-700 p-6 opacity-75">
-            <div class="flex items-center justify-between">
+        <div class="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
+            <div class="flex items-center justify-between mb-6">
                 <div class="flex items-center space-x-4">
                     <div class="p-2 bg-blue-500/10 rounded-lg text-blue-400">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                     </div>
                     <div>
-                        <h3 class="text-lg font-bold text-gray-300">Telegram Notifications</h3>
-                        <p class="text-sm text-gray-500">Get instant alerts on your mobile device.</p>
+                        <h3 class="text-lg font-bold text-gray-300">Notificações Telegram</h3>
+                        <p class="text-sm text-gray-500">Receba alertas de queda direto no seu celular.</p>
                     </div>
                 </div>
-                <span class="px-3 py-1 rounded-full bg-yellow-900/20 text-yellow-500 text-xs font-bold border border-yellow-800/30">
-                    COMING SOON
-                </span>
             </div>
+
+            <form th:action="@{/settings/update-telegram}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+                        Seu Chat ID
+                    </label>
+                    <div class="flex gap-2">
+                        <input type="text" name="telegramChatId"
+                               th:value="${user.user.telegramChatId}"
+                               placeholder="Ex: 123456789"
+                               class="flex-1 bg-gray-900/50 border border-gray-600 text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5">
+
+                        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium">
+                            Salvar
+                        </button>
+                    </div>
+                </div>
+
+                <div th:if="${user.user.telegramChatId != null and !user.user.telegramChatId.isEmpty()}"
+                     class="flex items-center p-3 text-sm text-green-300 rounded-lg bg-green-900/20 border border-green-900/50">
+                    <svg class="flex-shrink-0 inline w-4 h-4 mr-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z"/>
+                    </svg>
+                    <div>
+                        <span class="font-bold">Status: Ativo.</span>
+                        Atualmente enviando alertas para o ID:
+                        <span class="font-mono bg-black/20 px-1 rounded ml-1" th:text="${user.user.telegramChatId}"></span>
+                    </div>
+                </div>
+
+                <div th:if="${user.user.telegramChatId == null or user.user.telegramChatId.isEmpty()}"
+                     class="flex items-center p-3 text-sm text-yellow-300 rounded-lg bg-yellow-900/20 border border-yellow-900/50">
+                    <svg class="flex-shrink-0 inline w-4 h-4 mr-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM10 15a1 1 0 1 1 0-2 1 1 0 0 1 0 2Zm1-4a1 1 0 0 1-2 0V6a1 1 0 0 1 2 0v5Z"/>
+                    </svg>
+                    <div>
+                        <span class="font-bold">Atenção:</span> Você ainda não configurou o Telegram. Seus serviços não enviarão alertas.
+                    </div>
+                </div>
+
+                <div class="bg-blue-900/20 border border-blue-900/50 rounded-lg p-3 text-sm text-blue-200">
+                    <p class="font-bold mb-1">Não sabe seu ID?</p>
+                    <ol class="list-decimal list-inside space-y-1 text-blue-300/80">
+                        <li>
+                            Abra nosso bot:
+                            <a href="https://t.me/Webbeat_bot" target="_blank" class="text-blue-400 hover:text-blue-300 font-bold underline hover:no-underline transition-colors">
+                                Clique aqui
+                            </a>.
+                        </li>
+                        <li>Envie o comando <code class="bg-black/30 px-1 rounded">/id</code>.</li>
+                        <li>Copie o número que ele responder e cole aqui.</li>
+                    </ol>
+                </div>
+            </form>
         </div>
 
     </div>

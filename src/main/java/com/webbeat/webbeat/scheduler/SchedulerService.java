@@ -18,7 +18,7 @@ import org.springframework.http.client.ReactorResourceFactory;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
-
+import com.webbeat.webbeat.repository.UserRepository;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +47,8 @@ public class SchedulerService {
     private MongoTemplate mongoTemplate;
     @Autowired
     private ObjectFactory<RequestTasks> tasksFactory;
+    @Autowired
+    private UserRepository userRepository;
 
 
     public SchedulerService(ThreadPoolTaskScheduler scheduler, LogRepository logRepository, MonitoredRepository monitoredRepository, MonitoredService monitoredService) {
@@ -166,6 +168,12 @@ public class SchedulerService {
             task.setUrl(monitored.link());
             task.setPort(monitored.port());
             task.setType(monitored.type());
+            task.setName(monitored.name());
+
+            var dono = userRepository.findById(monitored.ownerId()).orElse(null);
+            if (dono != null) {
+                task.setTelegramChatId(dono.telegramChatId());
+            }
 
             ScheduledFuture<?> future = scheduler.scheduleWithFixedDelay(task, Duration.ofSeconds(delaySeconds));
             tasks.put(monitored.id(), future);
