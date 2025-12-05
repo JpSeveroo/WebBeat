@@ -6,15 +6,12 @@
 
 <div th:replace="~{fragments/sidebar :: sidebar('monitored')}"></div>
 
+<div id="toast-container" class="fixed top-5 right-5 z-50 space-y-4"></div>
+
 <main class="flex-1 p-8 overflow-y-auto">
 
     <div class="flex justify-between items-center mb-8">
-        <h2 class="text-3xl font-bold text-white">All Monitored URLs</h2>
-
-        <button id="startButton"
-                class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors">
-            Start Monitoring
-        </button>
+        <h2 class="text-3xl font-bold text-white">Monitored Services</h2>
     </div>
 
     <div class="bg-gray-800/50 rounded-xl p-6 mb-8 border border-gray-700/50 shadow-lg">
@@ -24,7 +21,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="md:col-span-3">
-                    <input type="text" name="name" placeholder="Service Name (e.g. Google ou Banco)" required
+                    <input type="text" name="name" placeholder="Service Name (e.g. Google or Database)" required
                            class="w-full bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5">
                 </div>
 
@@ -38,7 +35,6 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-
                 <div class="md:col-span-3">
                     <input type="url" name="link" id="addressInput" placeholder="URL (e.g. https://google.com)" required
                            class="w-full bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5">
@@ -49,9 +45,9 @@
                            class="w-full bg-gray-700/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5">
                 </div>
 
-                <div id="submitContainer" class="md:col-span-1">
+                <div class="md:col-span-1">
                     <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-6 rounded-lg transition-colors">
-                        Monitor
+                        Add Service
                     </button>
                 </div>
             </div>
@@ -62,60 +58,116 @@
         <table class="min-w-full divide-y divide-gray-700/50">
             <thead class="bg-gray-800/60">
             <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Service Name</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">URL / Address</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    Status
+                </th>
+
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    Service Name
+                </th>
+
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    URL / Address
+                </th>
+
+                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    Interval
+                </th>
+
+                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    Monitoring
+                </th>
+
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    Actions
+                </th>
             </tr>
             </thead>
 
             <tbody class="divide-y divide-gray-700/50">
-            <tr th:each="item : ${monitored}" class="hover:bg-gray-700/30 transition-colors duration-150">
+            <tr th:each="item : ${monitored}" class="hover:bg-gray-700/30 transition-colors duration-150" th:id="'row-' + ${item.id}">
+
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-gray-700 text-gray-300">
-                        <span class="w-2 h-2 mr-1.5 bg-gray-400 rounded-full"></span>
-                        Pending
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border"
+                          th:classappend="${item.beingMonitored}
+                            ? 'bg-green-900/30 text-green-400 border-green-800'
+                            : 'bg-gray-700/30 text-gray-400 border-gray-600'">
+                        <span class="w-1.5 h-1.5 mr-1.5 rounded-full"
+                              th:classappend="${item.beingMonitored} ? 'bg-green-400 animate-pulse' : 'bg-gray-400'"></span>
+                        <span th:text="${item.beingMonitored} ? 'Live' : 'Stopped'">Stopped</span>
                     </span>
                 </td>
 
-                <td class="px-6 py-4 whitespace-nowrap text-white font-medium">
+                <td class="px-6 py-4 whitespace-nowrap text-white text-sm font-medium">
                     <span th:text="${item.name}">Name</span>
-                    <span th:if="${item.type == 'TCP'}" class="ml-2 px-1.5 py-0.5 text-xs rounded bg-blue-900 text-blue-200">TCP</span>
+                    <span th:if="${item.type == 'TCP'}" class="ml-2 text-[10px] bg-blue-900/50 text-blue-300 px-1 rounded border border-blue-800">TCP</span>
                 </td>
 
-                <td class="px-6 py-4 whitespace-nowrap text-gray-400">
-                    <span th:if="${item.type == 'TCP'}" th:text="${item.link + ':' + item.port}"></span>
-                    <a th:unless="${item.type == 'TCP'}" th:href="${item.link}" th:text="${item.link}" target="_blank" class="hover:text-purple-400 hover:underline">Link</a>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                    <a th:href="${item.link}" target="_blank" class="hover:text-purple-400 transition-colors truncate block max-w-[200px]" th:text="${item.link}"></a>
                 </td>
 
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex justify-center items-center"
+                         th:with="currentInterval=${item.interval != null ? item.interval : 30},
+                  isHour=${currentInterval % 3600 == 0},
+                  isMin=${!isHour and currentInterval % 60 == 0},
+                  displayVal=${isHour ? currentInterval / 3600 : (isMin ? currentInterval / 60 : currentInterval)},
+                  unitVal=${isHour ? 3600 : (isMin ? 60 : 1)}">
 
-                    <!-- Botão EDIT -->
+                        <div class="relative flex rounded-md shadow-sm w-36">
+
+                            <input type="number" min="1"
+                                   th:value="${displayVal}"
+                                   th:disabled="${item.beingMonitored}"
+                                   class="row-interval-value block w-full rounded-l-md border-0 bg-gray-700/50 py-1.5 pl-3 pr-2 text-white ring-1 ring-inset ring-gray-600 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-purple-500 sm:text-sm sm:leading-6 text-right appearance-none disabled:cursor-not-allowed disabled:opacity-50 transition-all">
+
+                            <div class="relative -ml-px flex-shrink-0">
+                                <select th:disabled="${item.beingMonitored}"
+                                        class="row-interval-unit block w-full rounded-r-md border-0 bg-gray-800 py-1.5 pl-2 pr-7 text-gray-300 ring-1 ring-inset ring-gray-600 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-purple-500 sm:text-sm sm:leading-6 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-700 transition-colors cursor-pointer appearance-none">
+                                    <option value="1" th:selected="${unitVal == 1}">s</option>
+                                    <option value="60" th:selected="${unitVal == 60}">min</option>
+                                    <option value="3600" th:selected="${unitVal == 3600}">hr</option>
+                                </select>
+
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                                    <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <div th:if="${item.beingMonitored}"
+                                 class="absolute -top-2.5 left-1/2 transform -translate-x-1/2 bg-gray-900 text-purple-400 text-[10px] px-1.5 py-0.5 rounded-full border border-gray-700 shadow-sm z-20 flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                                <span class="font-bold">Active</span>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+
+                <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer monitor-toggle"
+                               th:checked="${item.beingMonitored}"
+                               th:data-id="${item.id}">
+                        <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                    </label>
+                </td>
+
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     <a th:href="@{/monitored/edit/{id}(id=${item.id})}"
-                       class="inline-block px-3 py-1 text-xs font-semibold text-white bg-purple-600/80 hover:bg-purple-500 rounded-md shadow-sm transition-colors">
+                       class="text-gray-400 hover:text-white transition-colors text-xs font-semibold hover:underline">
                         Edit
                     </a>
-
-                    <!-- Botão DELETE -->
-                    <form th:action="@{/monitored/delete/{id}(id=${item.id})}" method="post" style="display:inline;">
-                        <button type="submit" onclick="return confirm('Are you sure?')"
-                                class="px-3 py-1 text-xs font-semibold text-white bg-red-600/80 hover:bg-red-500 rounded-md shadow-sm transition-colors">
+                    <span class="text-gray-600">|</span>
+                    <form th:action="@{/monitored/delete/{id}(id=${item.id})}" method="post" class="inline">
+                        <button type="submit" class="text-red-400 hover:text-red-300 transition-colors text-xs font-semibold hover:underline">
                             Delete
                         </button>
                     </form>
-
-                    <!-- NOVO BOTÃO: Allow / Remove Monitoring -->
-                    <button type="button"
-                            th:attr="data-id=${item.id}"
-                            class="monitor-btn px-3 py-1 text-xs font-semibold text-white rounded-md shadow-sm transition-colors bg-green-600 hover:bg-green-700">
-                        Allow monitoring
-                    </button>
-
-            </tr>
-
-            <tr th:if="${#lists.isEmpty(monitored)}">
-                <td colspan="4" class="px-6 py-8 text-center text-gray-400">
-                    No services monitored yet. Add one above!
                 </td>
             </tr>
             </tbody>
@@ -124,99 +176,104 @@
 
 </main>
 
+<style>
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
+</style>
+
+<script th:inline="javascript">
+    const csrfHeaderName = /*[[${_csrf.headerName}]]*/ 'X-CSRF-TOKEN';
+    const csrfToken = /*[[${_csrf.token}]]*/ '';
+</script>
+
 <script>
+    function showToast(message, isError = false) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        const bgColor = isError ? 'bg-red-900/90 border-red-700' : 'bg-green-900/90 border-green-700';
+        const textColor = isError ? 'text-red-200' : 'text-green-200';
+
+        toast.className = `flex items-center p-4 mb-4 rounded-lg border ${bgColor} ${textColor} shadow-lg transition-all duration-500 transform translate-x-full`;
+        toast.innerHTML = `
+            <div class="ml-3 text-sm font-medium">${message}</div>
+            <button type="button" class="ml-auto -mx-1.5 -my-1.5 rounded-lg p-1.5 inline-flex h-8 w-8 text-gray-300 hover:text-white focus:ring-2 focus:ring-gray-300" onclick="this.parentElement.remove()">
+                <span class="sr-only">Close</span>
+                <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                </svg>
+            </button>
+        `;
+
+        container.appendChild(toast);
+        setTimeout(() => toast.classList.remove('translate-x-full'), 100);
+        setTimeout(() => {
+            toast.classList.add('translate-x-full', 'opacity-0');
+            setTimeout(() => toast.remove(), 500);
+        }, 4000);
+    }
+
     function toggleFormFields() {
         const type = document.getElementById('serviceType').value;
         const portField = document.getElementById('portField');
         const addressInput = document.getElementById('addressInput');
-        const submitContainer = document.getElementById('submitContainer');
 
         if (type === 'TCP') {
-            // Modo TCP
             portField.classList.remove('hidden');
-            addressInput.placeholder = "Address / IP (e.g. 192.168.1.5)";
-            addressInput.type = "text"; // Permite IPs sem http://
-
-            // Botão ocupa linha nova ou espaço restante
-            submitContainer.classList.remove('md:col-span-1');
-            submitContainer.classList.add('md:col-span-4');
+            addressInput.placeholder = "IP Address";
         } else {
-            // Modo HTTP
             portField.classList.add('hidden');
-            addressInput.placeholder = "URL (e.g. https://google.com)";
-            addressInput.type = "url"; // Validação de URL
-
-            // Botão volta ao tamanho normal
-            submitContainer.classList.remove('md:col-span-4');
-            submitContainer.classList.add('md:col-span-1');
+            addressInput.placeholder = "URL (https://...)";
         }
     }
-</script>
 
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    var csrfHeaderName = /*[[${_csrf.headerName}]]*/ 'X-CSRF-TOKEN';
-    var csrfToken = /*[[${_csrf.token}]]*/ '';
-    /*]]>*/
-</script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll(".monitor-toggle").forEach(toggle => {
+            toggle.addEventListener("change", function () {
+                const id = this.getAttribute("data-id");
+                const isChecked = this.checked;
+                const row = document.getElementById('row-' + id);
 
-<script>
-    document.getElementById("startButton").addEventListener("click", function () {
-        fetch("/task/start", {
-            method: "POST",
-            headers: {
-                [csrfHeaderName]: csrfToken,
-                'Accept': 'text/plain'
-            },
-            credentials: 'same-origin'
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("Erro ao iniciar monitoramento (status " + response.status + ")");
-                }
-                return response.text();
-            })
-            .then(msg => {
-                alert("Monitoramento iniciado!\n\n" + msg);
-            })
-            .catch(err => {
-                alert("Erro: " + err.message);
-                console.error(err);
-            });
-    });
-</script>
+                let url;
 
-<script>
-    document.querySelectorAll(".monitor-btn").forEach(btn => {
-        btn.addEventListener("click", function () {
-
-            const id = this.getAttribute("data-id");
-            const isAllowing = this.classList.contains("bg-green-600");
-            const url = isAllowing ? `/task/allow/${id}` : `/task/remove/${id}`;
-
-            fetch(url, {
-                method: "PATCH",
-                headers: {
-                    [csrfHeaderName]: csrfToken,
-                    'Accept': 'application/json'
-                }
-            }).then(resp => {
-                if (!resp.ok) {
-                    throw new Error("Erro ao alterar monitoramento");
-                }
-
-                // Alternar modo do botão
-                if (isAllowing) {
-                    this.classList.remove("bg-green-600", "hover:bg-green-700");
-                    this.classList.add("bg-red-600", "hover:bg-red-700");
-                    this.textContent = "Remove monitoring";
+                if (!isChecked) {
+                    url = `/task/remove/${id}`;
                 } else {
-                    this.classList.remove("bg-red-600", "hover:bg-red-700");
-                    this.classList.add("bg-green-600", "hover:bg-green-700");
-                    this.textContent = "Allow monitoring";
+                    const val = row.querySelector('.row-interval-value').value;
+                    const unit = row.querySelector('.row-interval-unit').value;
+                    const totalDelay = parseInt(val) * parseInt(unit);
+                    url = `/task/allow/${id}?delay=${totalDelay}`;
                 }
-            }).catch(err => {
-                alert("Erro: " + err.message);
+
+                this.disabled = true;
+
+                fetch(url, {
+                    method: 'PATCH',
+                    headers: { [csrfHeaderName]: csrfToken }
+                })
+                    .then(async response => {
+                        if (response.ok) {
+                            showToast(isChecked ? "Monitoring started" : "Monitoring stopped");
+                            setTimeout(() => location.reload(), 1000);
+                        } else {
+                            this.checked = !isChecked;
+                            const errorData = await response.json().catch(() => ({}));
+                            const msg = errorData.message || "Failed to update status (Check limits)";
+                            showToast(msg, true);
+                            this.disabled = false;
+                        }
+                    })
+                    .catch(error => {
+                        this.checked = !isChecked;
+                        showToast("Network Error", true);
+                        this.disabled = false;
+                    });
             });
         });
     });
