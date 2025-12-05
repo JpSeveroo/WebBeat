@@ -6,19 +6,17 @@ import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import org.springframework.web.reactive.function.client.WebClientException;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Objects;
 
 @Component
 @Scope("prototype")
@@ -68,33 +66,36 @@ public class RequestTasks implements Runnable {
 
     private void checkHTTP(){
         long start = System.currentTimeMillis();
+        int currentStatus = 0;
 
-        var request = webClient.get()
+        try {
+
+            var responseEntity = webClient.get()
                     .uri(this.url)
                     .retrieve()
                     .toBodilessEntity()
-                    .map(response -> response.getStatusCode().value())
                     .block();
-        if  (Objects.nonNull(request)) {
-            long duration = System.currentTimeMillis() - start;
-            LOG.info("HTTP OK: {} | Status: {} | ResponseTime: {}", this.url, request,  duration);
 
-            if (request != 200) {
-                LOG.warn("Request for {} returned status code {}", url, request);
+            if (responseEntity != null) {
+                currentStatus = responseEntity.getStatusCode().value();
             }
 
-            if (!Objects.equals(this.statusCode, request)) {
-                this.statusCode = request;
-            }
-
-            salvarLog(this.statusCode, duration);
-
-            LOG.info(this.statusCode.toString());
-
+        } catch (WebClientResponseException e) {
+            currentStatus = e.getStatusCode().value();
+            LOG.warn("HTTP Status Error for {}: {}", url, currentStatus);
+        } catch (WebClientRequestException e ) {
+            currentStatus = 0;
+            LOG.warn("HTTP Network Error for {}: {}", url, e.getMessage());
+        } catch (Exception e) {
+            currentStatus = 500;
+            LOG.error("Unknown Error while monitoring {}: {}", url, e.getMessage());
         }
-        else {
-            LOG.info("Erro na requisição");
-        }
+
+        long duration = System.currentTimeMillis() - start;
+        this.statusCode = currentStatus;
+
+        LOG.info("HTTP Check: {} | Status: {} | Time: {}ms", this.url, currentStatus, duration);
+        salvarLog(this.statusCode, duration);
     }
 
 
