@@ -68,7 +68,7 @@ public class SchedulerService {
         }
     }
 
-    public void startScheduler(int delay) {
+    public void startScheduler(int defaultDelay) {
         for (Monitored monitored : apis.values()) {
             if (monitored.beingMonitored()) {
                 if (tasks.containsKey(monitored.id()) && !tasks.get(monitored.id()).isCancelled()) {
@@ -81,7 +81,10 @@ public class SchedulerService {
                     task.setUrl(monitored.link());
                     task.setPort(monitored.port());
                     task.setType(monitored.type());
-                    ScheduledFuture<?> future = scheduler.scheduleWithFixedDelay(task, Duration.ofSeconds(delay));
+
+                    int actualDelay = (monitored.interval() != null) ? monitored.interval() : defaultDelay;
+
+                    ScheduledFuture<?> future = scheduler.scheduleWithFixedDelay(task, Duration.ofSeconds(actualDelay));
                     tasks.put(monitored.id(), future);
                     LOG.info("task running");
                 }
@@ -90,25 +93,38 @@ public class SchedulerService {
     }
 
 
-    public void allowMonitoring(String ownerID, String taskID) {
-        List<Monitored> allowed = new ArrayList<>() ;
+    public void allowMonitoring(String ownerID, String taskID, Integer delay) {
 
-        for (Monitored monitored : apis.values()) {
-            if (monitored.beingMonitored()) {
-                allowed.add(monitored);
-            }
+        long activeCount = monitoredRepository.findByOwnerId(ownerID).stream()
+                .filter(Monitored::beingMonitored)
+                .count();
+
+        if (activeCount >= 5) {
+            throw new IllegalStateException("Limite atingido! Você só pode monitorar 5 serviços simultaneamente.");
         }
 
-        if (allowed.size() == 5) {
-            LOG.info("There are more than 5 tasks to allow");
-        }
-        else {
-            monitoredService.toggleMonitored(taskID, ownerID, true);
-        }
+        Monitored monitored = monitoredService.updateStatusAndInterval(taskID, ownerID, true, delay);
+
+        apis.put(monitored.id(), monitored);
+
+        int finalDelay = (delay != null) ? delay : (monitored.interval() != null ? monitored.interval() : 30);
+
+        startSingleTask(monitored.id(), finalDelay);
     }
 
     public void removeMonitoring(String ownerID, String taskID) {
-        monitoredService.toggleMonitored(ownerID, taskID, false);
+         Monitored monitored = monitoredService.toggleMonitored(taskID, ownerID, false);
+
+        apis.put(monitored.id(), monitored);
+
+        if (tasks.containsKey(taskID)) {
+            ScheduledFuture<?> future = tasks.get(taskID);
+            if (future != null) {
+                future.cancel(true);
+            }
+            tasks.remove(taskID);
+            LOG.info("Task {} stopped manually via removeMonitoring", taskID);
+        }
     }
 
     public Integer getStatus(String ownerId, String monitoredId) {
@@ -117,21 +133,42 @@ public class SchedulerService {
     }
 
     public void stopMonitoring() {
-        for (Monitored monitored : apis.values()) {
-            ScheduledFuture<?> future = tasks.get(monitored.id());
-            if (future != null || future.isCancelled()) {
-                LOG.info("Task not running");
-            } else {
+        for (String monitoredId : tasks.keySet()) {
+            ScheduledFuture<?> future = tasks.get(monitoredId);
+            if (future != null) {
                 future.cancel(true);
-                tasks.remove(monitored.id());
-                LOG.info("task stopped");
+                LOG.info("Task {} stopped (Global Stop)", monitoredId);
             }
         }
+        tasks.clear();
     }
 
-    public void tasksStatus() {
-        tasks.forEach((taskID, future) -> {
-            System.out.println("Task " + taskID + " is running" + !future.isCancelled());
-        });
+    public void startSingleTask(String monitoredId, int delaySeconds) {
+        Monitored monitored = apis.get(monitoredId);
+        if (monitored == null) {
+            monitored = monitoredRepository.findById(monitoredId).orElse(null);
+            if (monitored != null) apis.put(monitored.id(), monitored);
+        }
+
+        if (monitored != null) {
+            if (tasks.containsKey(monitoredId)) {
+                ScheduledFuture<?> existing = tasks.get(monitoredId);
+                if (existing != null && !existing.isCancelled()) {
+                    existing.cancel(true);
+                }
+            }
+
+            LOG.info("Iniciando monitoramento isolado para {} com delay de {}s", monitored.name(), delaySeconds);
+
+            RequestTasks task = tasksFactory.getObject();
+            task.setOwnerId(monitored.ownerId());
+            task.setMonitoredId(monitored.id());
+            task.setUrl(monitored.link());
+            task.setPort(monitored.port());
+            task.setType(monitored.type());
+
+            ScheduledFuture<?> future = scheduler.scheduleWithFixedDelay(task, Duration.ofSeconds(delaySeconds));
+            tasks.put(monitored.id(), future);
+        }
     }
 }
