@@ -1,43 +1,44 @@
-📘 Relatório de Implementação: Gestão de URLs (Multi-Tenant)
+# 📘 Relatório de Implementação: Gestão de URLs (Multi-Tenant)
 
-Resumo: Implementação completa do fluxo CRUD (Create, Read, Update, Delete) para serviços monitorados, garantindo isolamento estrito de dados por usuário (multi-tenancy) e renderização server-side.
+**Resumo:** Implementação completa do fluxo CRUD para serviços monitorados, com suporte a múltiplos protocolos (HTTP/TCP), intervalos customizáveis e controle de estado em tempo real.
 
-1. Arquitetura e Componentes
+## 1. Arquitetura e Componentes
 
-A solução segue o padrão MVC (Model-View-Controller) com uma camada de serviço intermediária para regras de negócio.
+A solução segue o padrão MVC, expandida para suportar agendamento dinâmico.
 
-    Domínio (Monitored.java): Entidade imutável (Java Record) mapeada para a coleção URLs no MongoDB. Inclui o campo crucial ownerId para vincular o dado ao usuário.
+* **Domínio (`Monitored.java`):** Entidade imutável (Record) mapeada para a coleção `URLs`.
+    * **Novos Campos:**
+        * `type`: Define o protocolo (`HTTP` ou `TCP`).
+        * `port`: Porta específica (obrigatório para TCP).
+        * `interval`: Intervalo de verificação em segundos (padrão: 30s).
+        * `beingMonitored`: Flag booleana que indica se o agendador deve processar este serviço.
 
-    DTO (MonitoredDTO.java): Objeto de transferência de dados para desacoplar a entrada do usuário da entidade de banco de dados, prevenindo Over-Posting.
+* **DTO (`MonitoredDTO.java`):** Transfere dados de entrada, incluindo a seleção de protocolo e intervalo.
 
-2. Camada de Serviço (MonitoredService)
+## 2. Camada de Serviço (`MonitoredService`)
 
-Responsável pela integridade dos dados e aplicação das regras de negócio.
+Além do CRUD básico, o serviço agora gerencia o estado de monitoramento.
 
-    Isolamento de Dados: Todos os métodos exigem o ownerId. O método findByOwnerId delega ao repositório a busca filtrada, garantindo que o usuário veja apenas seus registros.
+* **Isolamento de Dados:** Mantém a restrição por `ownerId`.
+* **Controle de Estado (`toggleMonitored`):** Permite ativar ou pausar o monitoramento de um serviço específico sem deletá-lo do banco. Atualiza o status `beingMonitored` e registra o timestamp de início.
+* **Atualização Atômica:** O método `updateStatusAndInterval` permite ajustar a frequência de monitoramento dinamicamente.
 
-    Prevenção de Duplicidade: Implementada validação existsByOwnerIdAndLink no cadastro para evitar monitoramento redundante da mesma URL pelo mesmo usuário.
+## 3. Camada de Controle (`MonitoredController`)
 
-    Segurança IDOR: Nos métodos updateMonitored e removeMonitored, o serviço busca o registro pelo ID e imediatamente verifica se o ownerId do documento corresponde ao do usuário logado. Se houver divergência, uma exceção é lançada antes de qualquer modificação.
+Atua como orquestrador entre o HTTP, o Serviço de Banco de Dados e o Agendador.
 
-3. Camada de Controle (MonitoredController)
+* **Integração com Scheduler:** Ao carregar a lista (`GET /monitored`), o controller invoca `schedulerService.allApis(user.getId())` para garantir que o mapa de tarefas em memória esteja sincronizado com o banco de dados.
+* **Rotas Principais:**
+    * `GET /monitored`: Lista serviços e sincroniza scheduler.
+    * `POST /monitored/add`: Cadastra serviço (HTTP ou TCP).
+    * `POST /monitored/update/{id}`: Atualiza configurações.
 
-Atua como orquestrador entre o HTTP e o Serviço.
+## 4. Frontend (Thymeleaf + JS)
 
-    Rotas:
+A interface (`allURLs.html`) evoluiu para um painel de controle interativo.
 
-        GET /monitored: Lista os serviços.
-
-        POST /monitored/add: Cadastra novo serviço.
-
-        POST /monitored/delete/{id}: Remove serviço.
-
-        POST /monitored/update/{id}: Atualiza serviço.
-
-    Segurança da Sessão: Utilização da anotação @AuthenticationPrincipal CustomUserDetails user em todos os endpoints. Isso extrai o ID do usuário diretamente do contexto de segurança do Spring, tornando impossível a falsificação de identidade via parâmetros da requisição.
-
-4. Frontend (Thymeleaf)
-
-   Visualização (allURLs.html): Renderiza a tabela de serviços iterando sobre a lista enviada pelo Controller. Utiliza formulários ocultos para ações de DELETE (convertendo cliques em requisições POST).
-
-   Edição (editURL.html): Formulário populado com dados existentes, permitindo a alteração transparente de propriedades do serviço.
+* **Visualização:** Renderiza badges de status ("Live"/"Stopped") e ícones de protocolo.
+* **Interatividade (AJAX/Fetch):**
+    * **Toggle Switch:** Checkboxes na tabela disparam requisições `PATCH` para `/task/allow/{id}` ou `/task/remove/{id}`. Isso inicia ou para o monitoramento em tempo real sem recarregar a página.
+    * **Calculadora de Intervalo:** Conversor visual de segundos para minutos/horas.
+    * **Feedback:** Sistema de "Toasts" (notificações flutuantes) informa sucesso ou erro (ex: limite de 5 serviços atingido).
