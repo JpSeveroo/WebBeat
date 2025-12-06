@@ -2,7 +2,7 @@ package com.webbeat.webbeat.tasks;
 
 import com.webbeat.webbeat.model.LogEntry;
 import com.webbeat.webbeat.repository.LogRepository;
-import com.webbeat.webbeat.service.TelegramService; 
+import com.webbeat.webbeat.service.TelegramService;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -63,10 +63,18 @@ public class RequestTasks implements Runnable {
             socket.connect(new InetSocketAddress(this.url, this.port), 3000);
             this.statusCode = 200;
             LOG.info("TCP OK: {}:{}", this.url, this.port);
+
+            // Verifica se voltou a funcionar (estava ruim antes?)
+            verificarRecuperacao(ownerId, monitoredId);
+
         } catch (IOException e){
             this.statusCode = 503;
             LOG.warn("TCP FALHA: {}:{} - {}", this.url, this.port, e.getMessage());
-            dispararAlerta(e.getMessage());
+
+            // Só alerta se for novidade (estava bom antes?)
+            if (deveAlertar(ownerId, monitoredId)) {
+                dispararAlerta(e.getMessage());
+            }
         }
         salvarLog(this.statusCode, System.currentTimeMillis() - start);
     }
@@ -102,7 +110,11 @@ public class RequestTasks implements Runnable {
         }
 
         if (currentStatus != 200 && erroMsg != null) {
-            dispararAlerta(erroMsg);
+            if (deveAlertar(ownerId, monitoredId)) {
+                dispararAlerta(erroMsg);
+            }
+        } else if (currentStatus == 200) {
+            verificarRecuperacao(ownerId, monitoredId);
         }
 
         long duration = System.currentTimeMillis() - start;
@@ -110,6 +122,36 @@ public class RequestTasks implements Runnable {
 
         LOG.info("HTTP Check: {} | Status: {} | Time: {}ms", this.url, currentStatus, duration);
         salvarLog(this.statusCode, duration);
+    }
+
+    private boolean deveAlertar(String ownerId, String monitoredId) {
+        var ultimoLogOpt = logRepository.findTopByOwnerIdAndMonitoredIdOrderByTimestampDesc(ownerId, monitoredId);
+
+        if (ultimoLogOpt.isEmpty()) {
+            return true;
+        }
+
+        var ultimoLog = ultimoLogOpt.get();
+
+        if (ultimoLog.statusCode() == 200) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private void verificarRecuperacao(String ownerId, String monitoredId) {
+        var ultimoLogOpt = logRepository.findTopByOwnerIdAndMonitoredIdOrderByTimestampDesc(ownerId, monitoredId);
+
+        if (ultimoLogOpt.isPresent() && ultimoLogOpt.get().statusCode() != 200) {
+            if (this.telegramChatId != null && !this.telegramChatId.isEmpty()) {
+                telegramService.notificarRecuperacao(
+                        this.telegramChatId,
+                        this.name != null ? this.name : "Serviço",
+                        this.url
+                );
+            }
+        }
     }
 
     private void dispararAlerta(String erro) {

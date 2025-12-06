@@ -22,4 +22,15 @@ public class TelegramService {
 
         telegramIntegration.enviarMensagemDireta(targetChatId, texto);
     }
+    public void notificarRecuperacao(String targetChatId, String nomeServico, String link) {
+        String texto = String.format("""
+                ✅ *SERVIÇO RECUPERADO* ✅
+                🟢 *Serviço:* %s
+                🔗 *URL:* %s
+                
+                O sistema voltou a responder com sucesso!
+                """, nomeServico, link);
+
+        telegramIntegration.enviarMensagemDireta(targetChatId, texto);
+    }
 }
