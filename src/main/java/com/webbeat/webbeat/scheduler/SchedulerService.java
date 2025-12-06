@@ -10,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -178,5 +180,25 @@ public class SchedulerService {
             ScheduledFuture<?> future = scheduler.scheduleWithFixedDelay(task, Duration.ofSeconds(delaySeconds));
             tasks.put(monitored.id(), future);
         }
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void onStartup() {
+        LOG.info("System Startup: Loading active monitoring tasks...");
+
+        List<Monitored> activeMonitored = monitoredRepository.findByBeingMonitoredTrue();
+
+        if (activeMonitored.isEmpty()) {
+            LOG.info("No active monitoring tasks found on startup.");
+            return;
+        }
+
+        for (Monitored monitored : activeMonitored) {
+            apis.put(monitored.id(), monitored);
+
+            int delay = monitored.interval() != null ? monitored.interval() : 30;
+            startSingleTask(monitored.id(), delay);
+        }
+        LOG.info("Loaded {} active monitoring tasks on startup.", activeMonitored.size());
     }
 }

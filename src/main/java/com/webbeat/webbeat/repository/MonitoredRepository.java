@@ -13,4 +13,6 @@ public interface MonitoredRepository extends MongoRepository<Monitored, String> 
     boolean existsByOwnerIdAndLink(String ownerId, String link);
 
     long countByOwnerId(String ownerId);
+
+    List<Monitored> findByBeingMonitoredTrue();
 }
