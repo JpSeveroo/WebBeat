@@ -27,8 +27,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 
-//6928c90fef163892b02ae0f1
-
 @Service
 public class SchedulerService {
 
@@ -102,7 +100,7 @@ public class SchedulerService {
                 .count();
 
         if (activeCount >= 5) {
-            throw new IllegalStateException("Limite atingido! Você só pode monitorar 5 serviços simultaneamente.");
+            throw new IllegalStateException("Limit reached! You can only monitor 5 services simultaneously.");
         }
 
         Monitored monitored = monitoredService.updateStatusAndInterval(taskID, ownerID, true, delay);
@@ -146,7 +144,9 @@ public class SchedulerService {
     }
 
     public void startSingleTask(String monitoredId, int delaySeconds) {
+
         Monitored monitored = apis.get(monitoredId);
+
         if (monitored == null) {
             monitored = monitoredRepository.findById(monitoredId).orElse(null);
             if (monitored != null) apis.put(monitored.id(), monitored);
@@ -160,7 +160,7 @@ public class SchedulerService {
                 }
             }
 
-            LOG.info("Iniciando monitoramento isolado para {} com delay de {}s", monitored.name(), delaySeconds);
+            LOG.info("Starting isolated monitoring for {} with {}s of delay", monitored.name(), delaySeconds);
 
             RequestTasks task = tasksFactory.getObject();
             task.setOwnerId(monitored.ownerId());

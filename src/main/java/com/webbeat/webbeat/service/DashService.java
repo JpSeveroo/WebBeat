@@ -13,12 +13,12 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class ReportService {
+public class DashService {
 
     private final LogRepository logRepository;
     private final MonitoredRepository monitoredRepository;
 
-    public ReportService(LogRepository logRepository, MonitoredRepository monitoredRepository) {
+    public DashService(LogRepository logRepository, MonitoredRepository monitoredRepository) {
         this.logRepository = logRepository;
         this.monitoredRepository = monitoredRepository;
     }

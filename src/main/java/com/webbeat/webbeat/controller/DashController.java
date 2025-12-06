@@ -2,7 +2,7 @@ package com.webbeat.webbeat.controller;
 
 import com.webbeat.webbeat.dto.DashboardStatsDTO;
 import com.webbeat.webbeat.security.CustomUserDetails;
-import com.webbeat.webbeat.service.ReportService;
+import com.webbeat.webbeat.service.DashService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -13,10 +13,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Controller
 public class DashController {
 
-    private final ReportService reportService;
+    private final DashService reportService;
 
-    // Construtor com injeção de dependência do ReportService
-    public DashController(ReportService reportService) {
+    public DashController(DashService reportService) {
         this.reportService = reportService;
     }
 
