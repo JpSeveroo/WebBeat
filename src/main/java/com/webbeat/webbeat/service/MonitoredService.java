@@ -1,20 +1,27 @@
 package com.webbeat.webbeat.service;
 
+import com.webbeat.webbeat.dto.MonStatusDTO;
 import com.webbeat.webbeat.dto.MonitoredDTO;
+import com.webbeat.webbeat.model.LogEntry;
 import com.webbeat.webbeat.model.Monitored;
+import com.webbeat.webbeat.repository.LogRepository;
 import com.webbeat.webbeat.repository.MonitoredRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class MonitoredService {
 
     private final MonitoredRepository monitoredRepository;
+    private final LogRepository logRepository;
 
-    public MonitoredService(MonitoredRepository monitoredRepository) {
+    public MonitoredService(MonitoredRepository monitoredRepository, LogRepository logRepository) {
         this.monitoredRepository = monitoredRepository;
+        this.logRepository = logRepository;
     }
 
     public List<Monitored> monFindByOwnerId(String ownerId) {
@@ -86,6 +93,35 @@ public class MonitoredService {
     public void removeMonitored(String id, String ownerId) {
         Monitored existing = monFindByIdAndOwner(id, ownerId);
         monitoredRepository.delete(existing);
+    }
+
+    public List<MonStatusDTO> statusList(List<Monitored> userMonitored) {
+
+        List<MonStatusDTO> status = new ArrayList<>();
+
+        for (Monitored monitored : userMonitored) {
+            if (!monitored.beingMonitored()) {
+
+                MonStatusDTO dto = new MonStatusDTO(
+                        monitored,
+                        null
+                );
+                status.add(dto);
+                continue;
+            }
+
+            Optional<LogEntry> log =  logRepository.findTopByOwnerIdAndMonitoredIdOrderByTimestampDesc(monitored.ownerId(), monitored.id());
+
+            Integer statusCode = log.map(LogEntry::statusCode).orElse(null);
+
+            MonStatusDTO dto = new MonStatusDTO(
+                    monitored,
+                    statusCode
+            );
+            status.add(dto);
+
+        }
+        return status;
     }
 
     public Monitored toggleMonitored(String id, String ownerId, boolean state) {
