@@ -85,45 +85,53 @@
             </thead>
 
             <tbody class="divide-y divide-gray-700/50">
-            <tr th:each="item : ${monitored}" class="hover:bg-gray-700/30 transition-colors duration-150" th:id="'row-' + ${item.id}">
+            <tr th:each="dto : ${statusList}" class="hover:bg-gray-700/30 transition-colors duration-150" th:id="'row-' + ${dto.monitored.id}">
 
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border"
-                          th:classappend="${item.beingMonitored}
-                            ? 'bg-green-900/30 text-green-400 border-green-800'
-                            : 'bg-gray-700/30 text-gray-400 border-gray-600'">
-                        <span class="w-1.5 h-1.5 mr-1.5 rounded-full"
-                              th:classappend="${item.beingMonitored} ? 'bg-green-400 animate-pulse' : 'bg-gray-400'"></span>
-                        <span th:text="${item.beingMonitored} ? 'Live' : 'Stopped'">Stopped</span>
-                    </span>
+                    <div th:with="isStopped=${!dto.monitored.beingMonitored},
+                                  isUp=${dto.monitored.beingMonitored and dto.status == 200}">
+
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border"
+                              th:classappend="${isStopped} ? 'bg-gray-700/30 text-gray-400 border-gray-600'
+                                            : (${isUp} ? 'bg-green-900/30 text-green-400 border-green-800'
+                                            : 'bg-red-900/30 text-red-400 border-red-800')">
+
+                            <span class="w-1.5 h-1.5 mr-1.5 rounded-full"
+                                  th:classappend="${isStopped} ? 'bg-gray-400'
+                                                : (${isUp} ? 'bg-green-400 animate-pulse'
+                                                : 'bg-red-400 animate-pulse')"></span>
+
+                            <span th:text="${isStopped} ? 'Stopped' : (${isUp} ? 'Live' : 'Down')">Stopped</span>
+                        </span>
+                    </div>
                 </td>
 
                 <td class="px-6 py-4 whitespace-nowrap text-white text-sm font-medium">
-                    <span th:text="${item.name}">Name</span>
-                    <span th:if="${item.type == 'TCP'}" class="ml-2 text-[10px] bg-blue-900/50 text-blue-300 px-1 rounded border border-blue-800">TCP</span>
+                    <span th:text="${dto.monitored.name}">Name</span>
+                    <span th:if="${dto.monitored.type == 'TCP'}" class="ml-2 text-[10px] bg-blue-900/50 text-blue-300 px-1 rounded border border-blue-800">TCP</span>
                 </td>
 
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                    <a th:href="${item.link}" target="_blank" class="hover:text-purple-400 transition-colors truncate block max-w-[200px]" th:text="${item.link}"></a>
+                    <a th:href="${dto.monitored.link}" target="_blank" class="hover:text-purple-400 transition-colors truncate block max-w-[200px]" th:text="${dto.monitored.link}"></a>
                 </td>
 
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex justify-center items-center"
-                         th:with="currentInterval=${item.interval != null ? item.interval : 30},
-                  isHour=${currentInterval % 3600 == 0},
-                  isMin=${!isHour and currentInterval % 60 == 0},
-                  displayVal=${isHour ? currentInterval / 3600 : (isMin ? currentInterval / 60 : currentInterval)},
-                  unitVal=${isHour ? 3600 : (isMin ? 60 : 1)}">
+                         th:with="currentInterval=${dto.monitored.interval != null ? dto.monitored.interval : 30},
+                                  isHour=${currentInterval % 3600 == 0},
+                                  isMin=${!isHour and currentInterval % 60 == 0},
+                                  displayVal=${isHour ? currentInterval / 3600 : (isMin ? currentInterval / 60 : currentInterval)},
+                                  unitVal=${isHour ? 3600 : (isMin ? 60 : 1)}">
 
                         <div class="relative flex rounded-md shadow-sm w-36">
 
                             <input type="number" min="1"
                                    th:value="${displayVal}"
-                                   th:disabled="${item.beingMonitored}"
+                                   th:disabled="${dto.monitored.beingMonitored}"
                                    class="row-interval-value block w-full rounded-l-md border-0 bg-gray-700/50 py-1.5 pl-3 pr-2 text-white ring-1 ring-inset ring-gray-600 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-purple-500 sm:text-sm sm:leading-6 text-right appearance-none disabled:cursor-not-allowed disabled:opacity-50 transition-all">
 
                             <div class="relative -ml-px flex-shrink-0">
-                                <select th:disabled="${item.beingMonitored}"
+                                <select th:disabled="${dto.monitored.beingMonitored}"
                                         class="row-interval-unit block w-full rounded-r-md border-0 bg-gray-800 py-1.5 pl-2 pr-7 text-gray-300 ring-1 ring-inset ring-gray-600 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-purple-500 sm:text-sm sm:leading-6 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-700 transition-colors cursor-pointer appearance-none">
                                     <option value="1" th:selected="${unitVal == 1}">s</option>
                                     <option value="60" th:selected="${unitVal == 60}">min</option>
@@ -137,7 +145,7 @@
                                 </div>
                             </div>
 
-                            <div th:if="${item.beingMonitored}"
+                            <div th:if="${dto.monitored.beingMonitored}"
                                  class="absolute -top-2.5 left-1/2 transform -translate-x-1/2 bg-gray-900 text-purple-400 text-[10px] px-1.5 py-0.5 rounded-full border border-gray-700 shadow-sm z-20 flex items-center gap-1">
                                 <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -151,19 +159,19 @@
                 <td class="px-6 py-4 whitespace-nowrap text-center">
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" class="sr-only peer monitor-toggle"
-                               th:checked="${item.beingMonitored}"
-                               th:data-id="${item.id}">
+                               th:checked="${dto.monitored.beingMonitored}"
+                               th:data-id="${dto.monitored.id}">
                         <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                     </label>
                 </td>
 
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                    <a th:href="@{/monitored/edit/{id}(id=${item.id})}"
+                    <a th:href="@{/monitored/edit/{id}(id=${dto.monitored.id})}"
                        class="text-gray-400 hover:text-white transition-colors text-xs font-semibold hover:underline">
                         Edit
                     </a>
                     <span class="text-gray-600">|</span>
-                    <form th:action="@{/monitored/delete/{id}(id=${item.id})}" method="post" class="inline">
+                    <form th:action="@{/monitored/delete/{id}(id=${dto.monitored.id})}" method="post" class="inline">
                         <button type="submit" class="text-red-400 hover:text-red-300 transition-colors text-xs font-semibold hover:underline">
                             Delete
                         </button>
