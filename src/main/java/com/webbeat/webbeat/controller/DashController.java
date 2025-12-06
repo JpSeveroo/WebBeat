@@ -7,16 +7,16 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
 public class DashController {
 
-    private final DashService reportService;
+    private final DashService dashService;
 
-    public DashController(DashService reportService) {
-        this.reportService = reportService;
+    // Construtor com injeção de dependência do DashService
+    public DashController(DashService dashService) {
+        this.dashService = dashService;
     }
 
     @GetMapping("/dashboard")
@@ -25,11 +25,11 @@ public class DashController {
         return "dashboard";
     }
 
-    @GetMapping("/dashboard/stats")
+    @GetMapping("/stats")
     @ResponseBody
     public DashboardStatsDTO getDashboardStats(@AuthenticationPrincipal CustomUserDetails user) {
         String userId = user.getId();
 
-        return reportService.getDashboardStats(userId);
+        return dashService.getDashboardStats(userId);
     }
 }

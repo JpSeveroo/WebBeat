@@ -1,84 +1,115 @@
 package com.webbeat.webbeat.service;
 
 import com.webbeat.webbeat.dto.DashboardStatsDTO;
+import com.webbeat.webbeat.dto.ChartDataPointDTO;
 import com.webbeat.webbeat.model.LogEntry;
 import com.webbeat.webbeat.model.Monitored;
+import com.webbeat.webbeat.model.DailyStat; // NOVO IMPORT: Modelo DailyStat
 import com.webbeat.webbeat.repository.LogRepository;
 import com.webbeat.webbeat.repository.MonitoredRepository;
+import com.webbeat.webbeat.repository.DailyStatRepository; // NOVO IMPORT: Repositório DailyStat
 import org.springframework.stereotype.Service;
-
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Collections;
+import java.util.ArrayList;
+
 
 @Service
 public class DashService {
 
     private final LogRepository logRepository;
     private final MonitoredRepository monitoredRepository;
+    private final DailyStatRepository dailyStatRepository;
 
-    public DashService(LogRepository logRepository, MonitoredRepository monitoredRepository) {
+    @Autowired
+    private MongoTemplate mongoTemplate;
+
+    public DashService(LogRepository logRepository, MonitoredRepository monitoredRepository, DailyStatRepository dailyStatRepository) {
         this.logRepository = logRepository;
         this.monitoredRepository = monitoredRepository;
+        this.dailyStatRepository = dailyStatRepository;
     }
 
     /**
      * Calcula todas as métricas do Dashboard para o usuário logado (userId).
-     * @param userId O ID do usuário logado (chave multi-tenant).
-     * @return Um DTO com todas as estatísticas.
      */
     public DashboardStatsDTO getDashboardStats(String userId) {
 
         // --- 1. Métrica: Total de URLs (Filtro por Usuário) ---
+        // Contagem de todos os serviços monitorados pertencentes ao usuário.
         long totalUrls = monitoredRepository.countByOwnerId(userId);
 
         // --- 2. Métrica: Total de Alertas (Filtro por Usuário) ---
-        // Conta todos os logs do usuário onde o status code NÃO é 200 (OK).
+        // Contagem de todos os logs do usuário onde o status code NÃO é 200 (OK).
         long totalAlerts = logRepository.countByOwnerIdAndStatusCodeNot(userId, 200);
 
-
         // --- 3. Métrica: Porcentagem de Uptime (Análise dos últimos 24h) ---
+        // ATENÇÃO: Esta métrica é falha para cenários complexos (diferentes intervalos),
+        // mas é mantida como métrica rápida de 24h até a agregação ser implementada.
         Instant last24Hours = Instant.now().minus(Duration.ofHours(24));
-
-        // Busca todos os logs do usuário nas últimas 24 horas
-        List<LogEntry> recentLogs = logRepository.findByOwnerIdAndTimestampAfter(userId, last24Hours);
+        List<LogEntry> recentLogs = logRepository.findByOwnerIdAndTimestampAfter(userId, last24Hours);   // Busca logs brutos recentes
 
         long totalChecks = recentLogs.size();
-        long successChecks = recentLogs.stream()
-                .filter(log -> log.statusCode() == 200)
-                .count();
+        long successChecks = recentLogs.stream().filter(log -> log.statusCode() == 200).count();
 
         double uptimePercentage = 0.0;
         if (totalChecks > 0) {
             uptimePercentage = (double) successChecks / totalChecks * 100.0;
         }
 
-
-        // --- 4. Métrica: Serviços Online (Cálculo Otimizado) ---
-        // 4.1. Busca TODAS as URLs do usuário.
+        // --- 4. Métrica: Serviços Online (Status Atual) ---
+        // Busca TODAS as URLs para verificar o status atual de cada uma.
         List<Monitored> allMonitored = monitoredRepository.findByOwnerId(userId);
-
         long servicesOnline = allMonitored.stream()
-                // 4.2. Filtra a lista, mantendo apenas as URLs que estão ONLINE.
                 .filter(monitored -> {
-
-                    // 4.3. Para cada URL, busca o log mais recente (findTop...) no banco.
                     Optional<LogEntry> latestLog = logRepository
                             .findTopByOwnerIdAndMonitoredIdOrderByTimestampDesc(userId, monitored.id());
-
-                    // 4.4. A URL está online se o log existe E o status for 200.
                     return latestLog.isPresent() && latestLog.get().statusCode() == 200;
                 })
-                // 4.5. Conta quantos passaram pelo filtro.
                 .count();
 
-        // --- 5. Retorna o Objeto Final ---
+        // --- 5. Métrica: Histórico de Uptime (USANDO DADOS REAIS AGREGADOS) ---
+        // Chamamos o metodo auxiliar que consulta a coleção de Roll-ups (DailyStat).
+        List<ChartDataPointDTO> uptimeHistory = getAggregatedUptimeHistory(userId);
+
         return new DashboardStatsDTO(
                 totalUrls,
                 servicesOnline,
                 uptimePercentage,
-                totalAlerts
+                totalAlerts,
+                uptimeHistory
         );
+    }
+
+    /**
+     * Busca os dados agregados (Roll-ups) no DailyStatRepository para o Gráfico de Linha.
+     * Esta consulta resolve o problema da Explosão de Logs para relatórios de longo prazo.
+     */
+    private List<ChartDataPointDTO> getAggregatedUptimeHistory(String userId) {
+
+        // 1. Define o período (Últimos 7 dias)
+        LocalDate oneWeekAgo = LocalDate.now().minusDays(7);
+
+        // 2. Busca os dados agregados (DailyStat) no NOVO REPOSITÓRIO
+        List<DailyStat> stats = dailyStatRepository.findByOwnerIdAndDateAfterOrderByDateAsc(userId, oneWeekAgo);
+
+        if (stats.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 3. Converte o modelo DailyStat para o DTO de gráfico (ChartDataPointDTO)
+        List<ChartDataPointDTO> history = new ArrayList<>();
+        for (DailyStat stat : stats) {
+            String label = stat.date().getDayOfWeek().toString().substring(0, 3);
+            history.add(new ChartDataPointDTO(label, stat.uptimePercentage()));
+        }
+
+        return history;
     }
 }
