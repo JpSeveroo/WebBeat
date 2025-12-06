@@ -1,5 +1,6 @@
 package com.webbeat.webbeat.controller;
 
+import com.webbeat.webbeat.dto.MonStatusDTO;
 import com.webbeat.webbeat.dto.MonitoredDTO;
 import com.webbeat.webbeat.model.Monitored;
 import com.webbeat.webbeat.repository.LogRepository;
@@ -10,6 +11,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Controller
 @RequestMapping("/monitored")
@@ -30,7 +33,9 @@ public class MonitoredController {
 
         var myMonitored = monitoredService.monFindByOwnerId(user.getId());
 
-        model.addAttribute("monitored", myMonitored);
+        List<MonStatusDTO> statusAndMonitored =  monitoredService.statusList(myMonitored);
+
+        model.addAttribute("statusList", statusAndMonitored);
 
         return "allURLs";
     }
