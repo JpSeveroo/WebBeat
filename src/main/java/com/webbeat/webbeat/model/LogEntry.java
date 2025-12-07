@@ -11,7 +11,7 @@ public record LogEntry(
         String id,
         String ownerId,
         String monitoredId,
-        @Indexed(expireAfterSeconds = 604800) // Índice TTL de 7 dias (7*24*60*60)
+        @Indexed(expireAfter = "604800s")
         Instant timestamp,
         Integer statusCode,
         Long responseTime

@@ -27,33 +27,23 @@ public class DashService {
     private final MonitoredRepository monitoredRepository;
     private final DailyStatRepository dailyStatRepository;
 
-    @Autowired
-    private MongoTemplate mongoTemplate;
+    private final MongoTemplate mongoTemplate;
 
-    public DashService(LogRepository logRepository, MonitoredRepository monitoredRepository, DailyStatRepository dailyStatRepository) {
+    public DashService(LogRepository logRepository, MonitoredRepository monitoredRepository, DailyStatRepository dailyStatRepository, MongoTemplate mongoTemplate) {
         this.logRepository = logRepository;
         this.monitoredRepository = monitoredRepository;
         this.dailyStatRepository = dailyStatRepository;
+        this.mongoTemplate = mongoTemplate;
     }
 
-    /**
-     * Calcula todas as métricas do Dashboard para o usuário logado (userId).
-     */
     public DashboardStatsDTO getDashboardStats(String userId) {
 
-        // --- 1. Métrica: Total de URLs (Filtro por Usuário) ---
-        // Contagem de todos os serviços monitorados pertencentes ao usuário.
         long totalUrls = monitoredRepository.countByOwnerId(userId);
 
-        // --- 2. Métrica: Total de Alertas (Filtro por Usuário) ---
-        // Contagem de todos os logs do usuário onde o status code NÃO é 200 (OK).
         long totalAlerts = logRepository.countByOwnerIdAndStatusCodeNot(userId, 200);
 
-        // --- 3. Métrica: Porcentagem de Uptime (Análise dos últimos 24h) ---
-        // ATENÇÃO: Esta métrica é falha para cenários complexos (diferentes intervalos),
-        // mas é mantida como métrica rápida de 24h até a agregação ser implementada.
         Instant last24Hours = Instant.now().minus(Duration.ofHours(24));
-        List<LogEntry> recentLogs = logRepository.findByOwnerIdAndTimestampAfter(userId, last24Hours);   // Busca logs brutos recentes
+        List<LogEntry> recentLogs = logRepository.findByOwnerIdAndTimestampAfter(userId, last24Hours);
 
         long totalChecks = recentLogs.size();
         long successChecks = recentLogs.stream().filter(log -> log.statusCode() == 200).count();
@@ -63,8 +53,6 @@ public class DashService {
             uptimePercentage = (double) successChecks / totalChecks * 100.0;
         }
 
-        // --- 4. Métrica: Serviços Online (Status Atual) ---
-        // Busca TODAS as URLs para verificar o status atual de cada uma.
         List<Monitored> allMonitored = monitoredRepository.findByOwnerId(userId);
         long servicesOnline = allMonitored.stream()
                 .filter(monitored -> {
@@ -74,8 +62,6 @@ public class DashService {
                 })
                 .count();
 
-        // --- 5. Métrica: Histórico de Uptime (USANDO DADOS REAIS AGREGADOS) ---
-        // Chamamos o metodo auxiliar que consulta a coleção de Roll-ups (DailyStat).
         List<ChartDataPointDTO> uptimeHistory = getAggregatedUptimeHistory(userId);
 
         return new DashboardStatsDTO(
@@ -87,23 +73,16 @@ public class DashService {
         );
     }
 
-    /**
-     * Busca os dados agregados (Roll-ups) no DailyStatRepository para o Gráfico de Linha.
-     * Esta consulta resolve o problema da Explosão de Logs para relatórios de longo prazo.
-     */
     private List<ChartDataPointDTO> getAggregatedUptimeHistory(String userId) {
 
-        // 1. Define o período (Últimos 7 dias)
         LocalDate oneWeekAgo = LocalDate.now().minusDays(7);
 
-        // 2. Busca os dados agregados (DailyStat) no NOVO REPOSITÓRIO
         List<DailyStat> stats = dailyStatRepository.findByOwnerIdAndDateAfterOrderByDateAsc(userId, oneWeekAgo);
 
         if (stats.isEmpty()) {
             return Collections.emptyList();
         }
 
-        // 3. Converte o modelo DailyStat para o DTO de gráfico (ChartDataPointDTO)
         List<ChartDataPointDTO> history = new ArrayList<>();
         for (DailyStat stat : stats) {
             String label = stat.date().getDayOfWeek().toString().substring(0, 3);

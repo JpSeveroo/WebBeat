@@ -14,22 +14,17 @@ public class DashController {
 
     private final DashService dashService;
 
-    // Construtor com injeção de dependência do DashService
     public DashController(DashService dashService) {
         this.dashService = dashService;
     }
 
     @GetMapping("/dashboard")
-    public String dashboardPage(Model model) {
+    public String dashboardPage(@AuthenticationPrincipal CustomUserDetails user ,Model model) {
+
+        DashboardStatsDTO stats = dashService.getDashboardStats(user.getId());
+        model.addAttribute("stats", stats);
+
         model.addAttribute("activePage", "dashboard");
         return "dashboard";
-    }
-
-    @GetMapping("/stats")
-    @ResponseBody
-    public DashboardStatsDTO getDashboardStats(@AuthenticationPrincipal CustomUserDetails user) {
-        String userId = user.getId();
-
-        return dashService.getDashboardStats(userId);
     }
 }
