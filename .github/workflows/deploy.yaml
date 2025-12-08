@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -41,37 +41,23 @@ jobs:
           push: true
           tags: ghcr.io/webbeat-system/webbeat:latest
 
-      - name: Prepare VPS Directory
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.KEY }}
-          script: mkdir -p ~/webbeat
+  deploy-local:
+    needs: build-and-push
+    runs-on: self-hosted
 
-      - name: Create .env file locally
+    steps:
+      - name: Checkout Config
+        uses: actions/checkout@v3
+
+      - name: Create .env file
+        run: echo "${{ secrets.ENV_FILE }}" > .env
+
+      - name: Refresh Docker Images
         run: |
-          echo "${{ secrets.ENV_FILE }}" > .env
-
-      - name: Copy Config Files
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.KEY }}
-          source: "docker-compose.yml,.env"
-          target: "~/webbeat/"
-
-      - name: Deploy Application
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.KEY }}
-          script: |
-            cd ~/webbeat
-            # Removed the risky 'echo' line because the file is already there!
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker compose pull
-              docker compose up -d --remove-orphans
-              docker image prune -f
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          
+          docker compose pull
+          
+          docker compose up -d --remove-orphans
+          
+          docker image prune -f
