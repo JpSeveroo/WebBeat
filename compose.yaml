@@ -1,24 +1,19 @@
 services:
   traefik:
-    image: traefik:v2.10
+    image: traefik:v2.11  # <--- UPDATED: Fixes the "Client Version" crash
     container_name: traefik
     command:
-      - "--api.insecure=false"
+      - "--api.insecure=true" # Dashboard enabled on 8080 (optional)
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
-      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.myresolver.acme.email=admin@seudominio.com"
-      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      # We removed the HTTPS/CertResolver commands because Cloudflare handles SSL
     ports:
-        - "80:80"
-        - "443:443"
+      - "80:80"
+      # - "443:443" <--- Commented out: Cloudflare talks to us on Port 80
+      - "8080:8080" # Traefik Dashboard (optional)
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./letsencrypt:/letsencrypt"
     networks:
       - webbeat-net
     restart: unless-stopped
@@ -53,12 +48,13 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_CHAT: ${TELEGRAM_CHAT}
     labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.webbeat.rule=Host(`webbeat.com`)"
-        - "traefik.http.routers.webbeat.entrypoints=websecure"
-        - "traefik.http.routers.webbeat.tls.certresolver=myresolver"
+      - "traefik.enable=true"
+      # ROUTING RULE: Listen for your ACTUAL domain
+      - "traefik.http.routers.webbeat.rule=Host(`webbeat.dev`)"
+      - "traefik.http.routers.webbeat.entrypoints=web"
     networks:
       - webbeat-net
+
 volumes:
   mongodb_data:
 
