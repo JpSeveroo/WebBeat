@@ -20,10 +20,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: maven
-
-      - name: Run Tests
-        run: ./mvnw test -DskipTests
+          cache: maven"
 
       - name: Log in to the Container registry
         uses: docker/login-action@v2
