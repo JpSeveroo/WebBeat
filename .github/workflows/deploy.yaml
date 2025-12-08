@@ -22,6 +22,10 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      # Passo de build APENAS para validar compilação (sem rodar testes de integração que exigem Mongo)
+      - name: Build with Maven
+        run: ./mvnw package -DskipTests
+
       - name: Log in to the Container registry
         uses: docker/login-action@v2
         with:
