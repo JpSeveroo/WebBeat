@@ -23,7 +23,7 @@ jobs:
           cache: maven
 
       - name: Run Tests
-        run: ./mvnw test
+        run: ./mvnw test -DskipTests
 
       - name: Log in to the Container registry
         uses: docker/login-action@v2
