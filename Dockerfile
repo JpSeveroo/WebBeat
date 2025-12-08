@@ -11,7 +11,7 @@ RUN dos2unix mvnw && chmod +x mvnw
 RUN ./mvnw dependency:go-offline
 
 COPY src ./src
-RUN ./mvnw package -DskipTests
+RUN ./mvnw package -Dmaven.test.skip=true
 
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app

@@ -41,20 +41,37 @@ jobs:
           push: true
           tags: ghcr.io/webbeat-system/webbeat:latest
 
-      - name: Deploy to VPS
+      - name: Prepare VPS Directory
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          script: mkdir -p ~/webbeat
+
+      - name: Create .env file locally
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > .env
+
+      - name: Copy Config Files
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          source: "docker-compose.yml,.env"
+          target: "~/webbeat/"
+
+      - name: Deploy Application
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.KEY }}
           script: |
-            mkdir -p ~/webbeat
             cd ~/webbeat
-            
-            echo "${{ secrets.ENV_FILE }}" > .env
-            
+            # Removed the risky 'echo' line because the file is already there!
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
             docker compose pull
-            docker compose up -d --remove-orphans
-            docker image prune -f
+              docker compose up -d --remove-orphans
+              docker image prune -f
